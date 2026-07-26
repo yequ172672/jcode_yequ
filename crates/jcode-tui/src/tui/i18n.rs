@@ -44,7 +44,32 @@ pub fn picker_active_submit_hint() -> &'static str {
     if_zh("  ↑↓ ←→ ↵ 退出", "  ↑↓ ←→ ↵ Esc")
 }
 
-/// Chinese labels for reasoning effort levels.
+/// Localized label for a reasoning effort level.
+/// Returns the label in the current UI language (Chinese or English).
+pub fn effort_label(effort: &str) -> &'static str {
+    match current_language() {
+        Language::Zh => match effort {
+            "none" => "无",
+            "low" => "低",
+            "medium" | "med" => "中",
+            "high" => "高",
+            "xhigh" => "极高",
+            "max" => "最大",
+            _ => "?",
+        },
+        Language::En => match effort {
+            "none" => "none",
+            "low" => "low",
+            "medium" | "med" => "med",
+            "high" => "high",
+            "xhigh" => "xhigh",
+            "max" => "max",
+            _ => "?",
+        },
+    }
+}
+
+/// Chinese labels for reasoning effort levels (legacy, always Chinese).
 pub fn effort_label_zh(effort: &str) -> &'static str {
     match effort {
         "none" => "无",
@@ -61,6 +86,6 @@ pub fn effort_label_zh(effort: &str) -> &'static str {
 pub fn model_picker_hint() -> &'static str {
     if_zh(
         " 快捷键: Ctrl+O 设置默认 · Ctrl+N 收藏 · Shift+Tab 切换到下一个收藏模型 · ←→ 切换思考等级",
-        " keys: Ctrl+O set default · Ctrl+N favorite · Shift+Tab switch active model to next favorite",
+        " keys: Ctrl+O set default · Ctrl+N favorite · Shift+Tab switch active model to next favorite · ←→ cycle effort",
     )
 }

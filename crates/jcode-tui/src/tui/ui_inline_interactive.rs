@@ -58,7 +58,7 @@ fn picker_entry_display_name(entry: &crate::tui::PickerEntry) -> String {
     // as a suffix so the user can see which level is selected.
     let effort_suffix = if !entry.option_efforts.is_empty() {
         if let Some(Some(effort)) = entry.option_efforts.get(entry.selected_option) {
-            let label = crate::tui::i18n::effort_label_zh(effort);
+            let label = crate::tui::i18n::effort_label(effort);
             format!(" ({})", label)
         } else {
             String::new()
