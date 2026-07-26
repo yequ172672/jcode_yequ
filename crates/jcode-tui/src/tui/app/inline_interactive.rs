@@ -1477,7 +1477,6 @@ impl App {
             // `xhigh`), so model-id-only inference over-advertises values.
             let mut effort_routes = Vec::new();
             let mut plain_routes = Vec::new();
-            let mut model_efforts = Vec::new();
             for route in entry_routes {
                 let efforts = if route_supports_reasoning_effort(&route.api_method) {
                     inferred_reasoning_efforts(Some(&route.api_method), Some(name))
@@ -1487,82 +1486,103 @@ impl App {
                 if efforts.is_empty() {
                     plain_routes.push(route);
                 } else {
-                    for effort in &efforts {
-                        if !model_efforts.contains(effort) {
-                            model_efforts.push(*effort);
-                        }
-                    }
                     effort_routes.push((route, efforts));
                 }
             }
 
             if !effort_routes.is_empty() {
-                // Merge all effort levels into a single entry with multiple options.
-                // Each option corresponds to one (route, effort) pair.
-                let mut merged_options: Vec<PickerOption> = Vec::new();
-                let mut option_efforts: Vec<Option<String>> = Vec::new();
-                for effort in &model_efforts {
-                    // Swarm modes (swarm / swarm-deep) are orchestration rungs on
-                    // the effort ladder, not per-model reasoning variants. They
-                    // must not generate `model (swarm)` picker rows.
-                    if crate::prompt::is_swarm_mode_effort(effort) {
-                        continue;
-                    }
-                    let effort_label = match *effort {
-                        "xhigh" => "xhigh",
-                        "max" => "max",
-                        "high" => "high",
-                        "medium" => "med",
-                        "low" => "low",
-                        "none" => "none",
-                        other => other,
-                    };
-                    for (route, route_efforts) in &effort_routes {
-                        if !route_efforts.contains(effort) {
+                // Merge effort levels per route: each route gets one entry with
+                // multiple options (one per effort level). This preserves route
+                // separation while collapsing the effort ladder into a single
+                // selectable row that the user cycles with Left/Right arrows.
+                for (route, route_efforts) in &effort_routes {
+                    let mut merged_options: Vec<PickerOption> = Vec::new();
+                    let mut option_efforts: Vec<Option<String>> = Vec::new();
+                    for effort in route_efforts {
+                        // Swarm modes are orchestration rungs, not per-model
+                        // reasoning variants. They must not generate picker rows.
+                        if crate::prompt::is_swarm_mode_effort(effort) {
                             continue;
                         }
+                        let effort_label = match *effort {
+                            "xhigh" => "xhigh",
+                            "max" => "max",
+                            "high" => "high",
+                            "medium" => "med",
+                            "low" => "low",
+                            "none" => "none",
+                            other => other,
+                        };
                         let mut opt = route.clone();
                         // Append effort info to route detail
                         if !opt.detail.is_empty() {
-                            opt.detail = format!("{} (effort: {})", opt.detail, effort_label);
+                            opt.detail =
+                                format!("{} (effort: {})", opt.detail, effort_label);
                         } else {
                             opt.detail = format!("effort: {}", effort_label);
                         }
                         merged_options.push(opt);
                         option_efforts.push(Some(effort.to_string()));
                     }
-                }
 
-                if !merged_options.is_empty() {
-                    let effort_matches_current =
-                        *name == current_model && current_effort.as_deref().is_some();
+                    if merged_options.is_empty() {
+                        continue;
+                    }
+
+                    let effort_matches_current = *name == current_model
+                        && current_effort.as_deref().is_some()
+                        && model_picker_route_is_current(
+                            name,
+                            route,
+                            &current_model,
+                            &current_provider,
+                        );
                     let current_option_idx = if effort_matches_current {
-                        option_efforts.iter().position(|e| {
-                            e.as_deref() == current_effort.as_deref()
-                        }).unwrap_or(0)
+                        option_efforts
+                            .iter()
+                            .position(|e| e.as_deref() == current_effort.as_deref())
+                            .unwrap_or(0)
                     } else {
                         // Default to "high" or the first available effort
-                        option_efforts.iter().position(|e| {
-                            e.as_deref() == Some("high")
-                        }).unwrap_or(0)
+                        option_efforts
+                            .iter()
+                            .position(|e| e.as_deref() == Some("high"))
+                            .unwrap_or(0)
                     };
                     let or_created = openrouter_created_timestamp(name);
                     let first_opt = merged_options[0].clone();
+                    let is_this_current = effort_matches_current
+                        && model_picker_route_is_current(
+                            name,
+                            route,
+                            &current_model,
+                            &current_provider,
+                        );
                     entries.push(PickerEntry {
                         name: name.clone(),
                         options: merged_options,
                         action: PickerAction::Model,
                         selected_option: current_option_idx,
-                        is_current: *name == current_model,
+                        is_current: is_this_current,
                         recommended: model_picker_route_is_recommended(name, &first_opt),
                         recommendation_rank: model_picker_recommendation_rank(name),
-                        usage_score: model_picker_usage_score(&usage_store, name, &first_opt, None),
+                        usage_score: model_picker_usage_score(
+                            &usage_store,
+                            name,
+                            &first_opt,
+                            None,
+                        ),
                         old: old_threshold_secs > 0
                             && or_created.map(|t| t < old_threshold_secs).unwrap_or(false),
                         created_date: or_created.map(format_created),
                         effort: None, // merged entry - effort is per-option
-                        is_default: is_config_default(name, &first_opt),
-                        is_favorite: false,
+                        is_default: is_config_default(name, route),
+                        is_favorite: model_picker_is_favorite(
+                            &favorites_store,
+                            name,
+                            route,
+                            None,
+                        ),
                         option_efforts,
                     });
                 }
@@ -3190,11 +3210,14 @@ impl App {
                 let entry = picker.entries[idx].clone();
 
                 if matches!(entry.action, PickerAction::Model) {
-                    if picker.column == 0 && entry.options.len() > 1 {
+                    // For merged entries (with option_efforts), Enter immediately
+                    // selects the model+effort; don't navigate columns.
+                    if entry.option_efforts.iter().any(|e| e.is_some()) {
+                        // fall through to selection below
+                    } else if picker.column == 0 && entry.options.len() > 1 {
                         picker.column = 1;
                         return Ok(());
-                    }
-                    if picker.column == 1 {
+                    } else if picker.column == 1 {
                         picker.column = picker.max_navigable_column();
                         return Ok(());
                     }

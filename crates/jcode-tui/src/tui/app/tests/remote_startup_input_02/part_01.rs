@@ -1696,11 +1696,11 @@ fn test_handle_input_shell_completed_renders_markdown_blocks() {
     );
 }
 
-/// Regression for issue #427: selecting an effort-variant model row (e.g.
-/// "gpt-5.5 (high)") in the remote model picker must stage the chosen effort
-/// alongside the pending model switch. Previously only the model spec was
-/// staged, so the server kept its configured default effort (low) and the
-/// session silently ran gpt-5.5 at low effort.
+/// Regression for issue #427: selecting a model with effort variants (e.g.
+/// "gpt-5.5") in the remote model picker must stage the chosen effort
+/// alongside the pending model switch. Previously effort variants were shown
+/// as separate rows; now they are merged into a single entry with multiple
+/// options, and the selected option's effort is staged.
 #[test]
 fn test_model_picker_effort_variant_selection_stages_effort_in_remote_mode() {
     let mut app = create_test_app();
@@ -1716,19 +1716,27 @@ fn test_model_picker_effort_variant_selection_stages_effort_in_remote_mode() {
     let entry_idx = picker
         .entries
         .iter()
-        .position(|m| m.name == "gpt-5.5 (high)")
-        .expect("gpt-5.5 (high) should be in picker");
+        .position(|m| m.name == "gpt-5.5")
+        .expect("gpt-5.5 should be in picker");
+    assert!(
+        !picker.entries[entry_idx].option_efforts.is_empty(),
+        "merged entry should have option_efforts"
+    );
+    // The default selected option should be "high" effort
     assert_eq!(
-        picker.entries[entry_idx].effort.as_deref(),
+        picker.entries[entry_idx]
+            .option_efforts
+            .get(picker.entries[entry_idx].selected_option)
+            .and_then(|e| e.as_deref()),
         Some("high"),
-        "effort variant rows must carry their effort"
+        "default selected effort should be high"
     );
 
     let filtered_pos = picker
         .filtered
         .iter()
         .position(|&i| i == entry_idx)
-        .expect("gpt-5.5 (high) should be in filtered list");
+        .expect("gpt-5.5 should be in filtered list");
     app.inline_interactive_state.as_mut().unwrap().selected = filtered_pos;
 
     app.handle_key(KeyCode::Enter, KeyModifiers::empty())
@@ -1764,17 +1772,32 @@ fn test_model_picker_effort_variants_follow_each_route_vocabulary() {
         .inline_interactive_state
         .as_ref()
         .expect("model picker should be open");
+    // With per-route merging, gpt-5.5 has multiple entries (one per route).
+    // Check across all gpt-5.5 entries for effort/route combinations.
+    let gpt_entries: Vec<_> = picker
+        .entries
+        .iter()
+        .filter(|entry| entry.name == "gpt-5.5")
+        .collect();
+    assert!(!gpt_entries.is_empty(), "gpt-5.5 should be in picker");
+    let has_effort = |effort: &str| {
+        gpt_entries.iter().any(|entry| {
+            entry.option_efforts.iter().any(|e| e.as_deref() == Some(effort))
+        })
+    };
     let has_route_effort = |api_method: &str, effort: &str| {
-        picker.entries.iter().any(|entry| {
-            entry.name.starts_with("gpt-5.5 (")
-                && entry.effort.as_deref() == Some(effort)
-                && entry
-                    .options
-                    .first()
-                    .is_some_and(|route| route.api_method == api_method)
+        gpt_entries.iter().any(|entry| {
+            entry
+                .option_efforts
+                .iter()
+                .zip(entry.options.iter())
+                .any(|(e, route)| {
+                    e.as_deref() == Some(effort) && route.api_method == api_method
+                })
         })
     };
 
+    assert!(has_effort("high"), "gpt-5.5 should have high effort");
     assert!(has_route_effort("openai-oauth", "max"));
     assert!(has_route_effort("openai-oauth", "minimal"));
     assert!(has_route_effort("openrouter", "xhigh"));
@@ -1813,7 +1836,11 @@ fn test_model_picker_plain_selection_stages_no_effort_in_remote_mode() {
     let entry_idx = picker
         .entries
         .iter()
-        .position(|m| m.name == "claude-opus-4-8" && m.effort.is_none())
+        .position(|m| {
+            m.name == "claude-opus-4-8"
+                && m.effort.is_none()
+                && m.option_efforts.is_empty()
+        })
         .expect("claude-opus-4-8 should be in picker without an effort variant");
 
     let filtered_pos = picker
