@@ -28,6 +28,7 @@ fn remote_model_picker_preview_state() -> crate::tui::InlineInteractiveState {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         }],
         selected: 0,
         column: 0,

@@ -7,6 +7,9 @@ impl App {
             "help" | "commands" => {
                 "/help\nShow general command list and keyboard shortcuts.\n\n/help <command>\nShow detailed help for one command."
             }
+            "language" => {
+                "/language\n显示当前语言设置。\n\n/language en\n切换到英文。\n\n/language zh\n切换到中文。"
+            }
             "compact" => {
                 "/compact\nForce context compaction now.\nStarts background summarization and applies it automatically when ready.\n\n/compact mode\nShow current compaction mode for this session.\n\n/compact mode <reactive|proactive|semantic>\nChange compaction mode for this session."
             }

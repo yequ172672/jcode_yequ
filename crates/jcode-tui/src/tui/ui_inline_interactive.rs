@@ -54,6 +54,18 @@ fn route_provider_display(provider: &str, api_method: &str) -> String {
 
 fn picker_entry_display_name(entry: &crate::tui::PickerEntry) -> String {
     let base = picker_entry_pretty_name(entry);
+    // For merged entries with multiple effort levels, show the current effort
+    // as a suffix so the user can see which level is selected.
+    let effort_suffix = if !entry.option_efforts.is_empty() {
+        if let Some(Some(effort)) = entry.option_efforts.get(entry.selected_option) {
+            let label = crate::tui::i18n::effort_label_zh(effort);
+            format!(" ({})", label)
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
     let default_marker = if entry.is_default { " default" } else { "" };
     let is_new = entry
         .options
@@ -81,7 +93,7 @@ fn picker_entry_display_name(entry: &crate::tui::PickerEntry) -> String {
         default_marker.to_string()
     };
 
-    format!("{}{}", base, suffix)
+    format!("{}{}{}", base, effort_suffix, suffix)
 }
 
 /// Human-friendly rendering of a model picker row's model name.
@@ -201,9 +213,7 @@ fn model_picker_top_hint(picker: &crate::tui::InlineInteractiveState) -> Option<
             .iter()
             .any(|entry| matches!(entry.action, crate::tui::PickerAction::Model));
     if is_runtime_model_picker {
-        Some(
-            " keys: Ctrl+O set default · Ctrl+N favorite · Shift+Tab switch active model to next favorite",
-        )
+        Some(crate::tui::i18n::model_picker_hint())
     } else {
         None
     }
@@ -917,6 +927,7 @@ mod tests {
                 old: false,
                 created_date: None,
                 effort: None,
+                option_efforts: vec![],
             }],
         }
     }
@@ -945,6 +956,7 @@ mod tests {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         }];
 
         if mixed_providers {
@@ -973,6 +985,7 @@ mod tests {
                 old: false,
                 created_date: None,
                 effort: None,
+                option_efforts: vec![],
             });
         }
 
@@ -1015,6 +1028,7 @@ mod tests {
                 old: false,
                 created_date: None,
                 effort: None,
+                option_efforts: vec![],
             }],
         }
     }

@@ -1091,6 +1091,10 @@ pub struct DisplayConfig {
     /// reveal when scrolling past the bottom, "on" keeps it always visible.
     #[serde(default)]
     pub overscroll_status: OverscrollStatusMode,
+    /// UI language: "zh" for Chinese, "en" or None for English (default).
+    /// Set via /language command.
+    #[serde(default)]
+    pub language: Option<String>,
 }
 impl Default for DisplayConfig {
     fn default() -> Self {
@@ -1126,6 +1130,7 @@ impl Default for DisplayConfig {
             theme: String::new(),
             active_sessions_manager: false,
             overscroll_status: OverscrollStatusMode::default(),
+            language: None,
         }
     }
 }
@@ -1315,6 +1320,10 @@ pub struct ProviderConfig {
     /// automatically (see `jcode_base::provider::stream_idle_timeout_for_effort`).
     /// Default: 180. Overridable via `JCODE_STREAM_IDLE_TIMEOUT_SECS`.
     pub stream_idle_timeout_secs: u64,
+    /// Enable Claude-compatible API mode (default: false).
+    /// When true, enables API compatibility with Claude format.
+    #[serde(default)]
+    pub claude_compat: bool,
 }
 
 impl Default for ProviderConfig {
@@ -1334,6 +1343,7 @@ impl Default for ProviderConfig {
             copilot_premium: None,
             model_picker_providers: None,
             stream_idle_timeout_secs: 180,
+            claude_compat: false,
         }
     }
 }

@@ -539,6 +539,7 @@ impl App {
                 old: false,
                 created_date: None,
                 effort: None,
+            option_efforts: vec![],
             });
         }
 
@@ -588,6 +589,7 @@ impl App {
                 old: false,
                 created_date: None,
                 effort: None,
+            option_efforts: vec![],
             });
         }
 
@@ -613,6 +615,7 @@ impl App {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         });
 
         models.push(crate::tui::PickerEntry {
@@ -637,6 +640,7 @@ impl App {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         });
 
         let replace_claude = claude_accounts
@@ -672,6 +676,7 @@ impl App {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         });
 
         let replace_openai = openai_accounts
@@ -707,6 +712,7 @@ impl App {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         });
 
         models.push(crate::tui::PickerEntry {
@@ -733,6 +739,7 @@ impl App {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         });
 
         if models.is_empty() {
@@ -797,6 +804,7 @@ impl App {
                 old: false,
                 created_date: None,
                 effort: None,
+            option_efforts: vec![],
             });
         }
 
@@ -822,6 +830,7 @@ impl App {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         });
 
         let replace_target = accounts
@@ -857,6 +866,7 @@ impl App {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         });
 
         models.push(crate::tui::PickerEntry {
@@ -883,6 +893,7 @@ impl App {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         });
 
         if accounts.is_empty() {
@@ -947,6 +958,7 @@ impl App {
                 old: false,
                 created_date: None,
                 effort: None,
+            option_efforts: vec![],
             });
         }
 
@@ -972,6 +984,7 @@ impl App {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         });
 
         let replace_target = accounts
@@ -1007,6 +1020,7 @@ impl App {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         });
 
         models.push(crate::tui::PickerEntry {
@@ -1033,6 +1047,7 @@ impl App {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         });
 
         if accounts.is_empty() {

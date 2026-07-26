@@ -12,6 +12,7 @@ pub mod backend;
 pub(crate) mod color_support;
 mod core;
 pub(crate) mod fuzzy;
+pub(crate) mod i18n;
 // Terminal image display + metadata helpers now live in the dependency-free
 // `jcode-terminal-image` crate (shared with the `read` tool). Re-exported here
 // so existing `crate::tui::image` / `crate::tui::image_metadata` paths keep working.
@@ -987,12 +988,12 @@ impl PickerKind {
         match self {
             Self::Model => InlineInteractiveSchema {
                 layout: InlineInteractiveLayout::ThreeColumn,
-                primary_label: "MODEL",
-                secondary_label: "PROVIDER",
-                secondary_preview_label: "PROVIDER",
-                tertiary_label: "METHOD",
-                preview_submit_hint: "  ↵ open",
-                active_submit_hint: "  ↑↓ ←→ ↵ Esc",
+                primary_label: crate::tui::i18n::picker_primary_label(),
+                secondary_label: crate::tui::i18n::picker_secondary_label(),
+                secondary_preview_label: crate::tui::i18n::picker_secondary_label(),
+                tertiary_label: crate::tui::i18n::picker_tertiary_label(),
+                preview_submit_hint: crate::tui::i18n::picker_preview_submit_hint(),
+                active_submit_hint: crate::tui::i18n::picker_active_submit_hint(),
                 shows_default_shortcut_hint: true,
                 preview_activation_column: 2,
             },
@@ -1390,6 +1391,10 @@ pub struct PickerEntry {
     /// Human-readable created date (e.g. "Jan 2026") for OpenRouter models
     pub created_date: Option<String>,
     pub effort: Option<String>,
+    /// Per-option effort levels (parallel to `options`).
+    /// Each entry is the effort string for the corresponding option, or None.
+    /// Used when a single entry has multiple effort variants merged into it.
+    pub option_efforts: Vec<Option<String>>,
 }
 
 impl PickerEntry {

@@ -47,6 +47,7 @@ impl App {
                 old: false,
                 created_date: None,
                 effort: None,
+            option_efforts: vec![],
             }
         })
         .collect();
@@ -128,6 +129,7 @@ impl App {
                     old: false,
                     created_date: None,
                     effort: None,
+            option_efforts: vec![],
                 }
             })
             .collect::<Vec<_>>();
@@ -156,6 +158,7 @@ impl App {
                     old: false,
                     created_date: None,
                     effort: None,
+            option_efforts: vec![],
                 },
             );
         }
@@ -241,6 +244,7 @@ impl App {
                             old: false,
                             created_date: None,
                             effort: None,
+            option_efforts: vec![],
                         },
                     );
                 }
@@ -271,6 +275,7 @@ impl App {
                     old: false,
                     created_date: None,
                     effort: None,
+            option_efforts: vec![],
                 },
             );
 

@@ -1910,6 +1910,7 @@ fn test_model_picker_filter_text_includes_provider_and_method() {
         old: false,
         created_date: None,
         effort: None,
+            option_efforts: vec![],
     };
 
     let filter_text = crate::tui::PickerKind::Model.filter_text(&entry);

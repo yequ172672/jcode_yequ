@@ -260,6 +260,7 @@ mod tests {
             old: false,
             created_date: None,
             effort: None,
+            option_efforts: vec![],
         }
     }
 

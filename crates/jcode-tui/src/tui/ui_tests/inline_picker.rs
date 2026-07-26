@@ -47,6 +47,7 @@ fn model_picker_entry() -> crate::tui::PickerEntry {
         old: false,
         created_date: None,
         effort: None,
+            option_efforts: vec![],
     }
 }
 
