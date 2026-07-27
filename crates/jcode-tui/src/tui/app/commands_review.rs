@@ -336,7 +336,7 @@ pub(super) fn handle_observe_command(app: &mut App, trimmed: &str) -> bool {
             } else {
                 app.set_status_notice("Observe: OFF");
                 app.push_display_message(DisplayMessage::system(
-                    "Observe mode disabled.".to_string(),
+                    crate::tui::i18n::observe_mode_disabled().to_string(),
                 ));
             }
         }
@@ -351,7 +351,7 @@ pub(super) fn handle_observe_command(app: &mut App, trimmed: &str) -> bool {
         "off" => {
             app.set_observe_mode_enabled(false, false);
             app.set_status_notice("Observe: OFF");
-            app.push_display_message(DisplayMessage::system("Observe mode disabled.".to_string()));
+            app.push_display_message(DisplayMessage::system(crate::tui::i18n::observe_mode_disabled().to_string()));
         }
         "status" => {
             app.push_display_message(DisplayMessage::system(observe_status_message(app)));

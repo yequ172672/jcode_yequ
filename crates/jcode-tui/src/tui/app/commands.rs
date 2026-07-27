@@ -752,10 +752,9 @@ fn handle_subagent_model_command(app: &mut App, trimmed: &str) -> bool {
         .trim();
 
     if rest.is_empty() || matches!(rest, "show" | "status") {
-        app.push_display_message(DisplayMessage::system(format!(
-            "Subagent model for this session: {}\n\nUse /subagent-model <name> to pin a model, or /subagent-model inherit to use the current model.",
-            current_subagent_model_summary(app)
-        )));
+        app.push_display_message(DisplayMessage::system(
+            crate::tui::i18n::subagent_model_usage(&current_subagent_model_summary(app)),
+        ));
         return true;
     }
 
@@ -766,7 +765,7 @@ fn handle_subagent_model_command(app: &mut App, trimmed: &str) -> bool {
             "Subagent model reset to inherit the current model ({}).",
             app.provider.model()
         )));
-        app.set_status_notice("Subagent model: inherit");
+        app.set_status_notice(crate::tui::i18n::subagent_model_inherit_notice());
         return true;
     }
 
@@ -1319,14 +1318,12 @@ pub(super) fn apply_ui_language(app: &mut App, language: crate::tui::i18n::Langu
     crate::config::Config::invalidate_cache();
     match language {
         crate::tui::i18n::Language::Zh => {
-            app.push_display_message(DisplayMessage::system("语言已切换为中文。".to_string()));
-            app.set_status_notice("语言：中文");
+            app.push_display_message(DisplayMessage::system(crate::tui::i18n::language_switched_zh().to_string()));
+            app.set_status_notice(crate::tui::i18n::language_status_zh());
         }
         crate::tui::i18n::Language::En => {
-            app.push_display_message(DisplayMessage::system(
-                "Language switched to English.".to_string(),
-            ));
-            app.set_status_notice("Language: English");
+            app.push_display_message(DisplayMessage::system(crate::tui::i18n::language_switched_en().to_string()));
+            app.set_status_notice(crate::tui::i18n::language_status_en());
         }
     }
 }
@@ -1349,7 +1346,7 @@ pub(super) fn handle_language_command(app: &mut App, trimmed: &str) -> bool {
         }
         Some(_) => {
             app.push_display_message(DisplayMessage::system(
-                "Usage: /language [en|zh]\n  /language    - open the language picker\n  /language en - switch to English\n  /language zh - 切换到中文".to_string(),
+                crate::tui::i18n::language_usage().to_string(),
             ));
         }
         None => {
@@ -1366,7 +1363,7 @@ fn handle_btw_command(app: &mut App, trimmed: &str) -> bool {
 
     let question = trimmed.strip_prefix("/btw").unwrap_or_default().trim();
     if question.is_empty() {
-        app.push_display_message(DisplayMessage::error("Usage: /btw <question>".to_string()));
+        app.push_display_message(DisplayMessage::error(crate::tui::i18n::btw_usage().to_string()));
         return true;
     }
 
@@ -1990,7 +1987,7 @@ pub(super) fn handle_session_command(app: &mut App, trimmed: &str) -> bool {
 
     if trimmed == "/rewind undo" {
         let Some(snapshot) = app.rewind_undo_snapshot.take() else {
-            app.push_display_message(DisplayMessage::system("No rewind to undo.".to_string()));
+            app.push_display_message(DisplayMessage::system(crate::tui::i18n::no_rewind_label().to_string()));
             return true;
         };
 

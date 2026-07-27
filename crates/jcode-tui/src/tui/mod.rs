@@ -1000,12 +1000,12 @@ impl PickerKind {
             },
             Self::Account => InlineInteractiveSchema {
                 layout: InlineInteractiveLayout::Compact,
-                primary_label: "ACCOUNT",
-                secondary_label: "STATE",
-                secondary_preview_label: "STATE",
+                primary_label: crate::tui::i18n::account_primary_label(),
+                secondary_label: crate::tui::i18n::account_secondary_label(),
+                secondary_preview_label: crate::tui::i18n::account_secondary_label(),
                 tertiary_label: "",
-                preview_submit_hint: "  ↵ select",
-                active_submit_hint: "  ↑↓/jk ↵ Esc",
+                preview_submit_hint: crate::tui::i18n::account_preview_submit_hint(),
+                active_submit_hint: crate::tui::i18n::account_active_submit_hint(),
                 shows_default_shortcut_hint: false,
                 preview_activation_column: 0,
             },
@@ -1022,23 +1022,23 @@ impl PickerKind {
             },
             Self::Login => InlineInteractiveSchema {
                 layout: InlineInteractiveLayout::ThreeColumn,
-                primary_label: "ITEM",
-                secondary_label: "PROVIDER",
-                secondary_preview_label: "PROVIDER",
-                tertiary_label: "ACTION",
-                preview_submit_hint: "  ↵ open",
-                active_submit_hint: "  ↑↓ ←→ ↵ Esc",
+                primary_label: crate::tui::i18n::login_primary_label(),
+                secondary_label: crate::tui::i18n::login_secondary_label(),
+                secondary_preview_label: crate::tui::i18n::login_secondary_label(),
+                tertiary_label: crate::tui::i18n::login_tertiary_label(),
+                preview_submit_hint: crate::tui::i18n::if_zh("  ↵ 打开", "  ↵ open"),
+                active_submit_hint: crate::tui::i18n::if_zh("  ↑↓ ←→ ↵ 退出", "  ↑↓ ←→ ↵ Esc"),
                 shows_default_shortcut_hint: true,
                 preview_activation_column: 2,
             },
             Self::Usage => InlineInteractiveSchema {
                 layout: InlineInteractiveLayout::ThreeColumn,
-                primary_label: "ITEM",
-                secondary_label: "STATUS",
-                secondary_preview_label: "ITEM",
-                tertiary_label: "WINDOW",
-                preview_submit_hint: "  ↵ inspect",
-                active_submit_hint: "  ↑↓ ←→ ↵ Esc",
+                primary_label: crate::tui::i18n::usage_primary_label(),
+                secondary_label: crate::tui::i18n::usage_secondary_label(),
+                secondary_preview_label: crate::tui::i18n::usage_primary_label(),
+                tertiary_label: crate::tui::i18n::usage_tertiary_label(),
+                preview_submit_hint: crate::tui::i18n::if_zh("  ↵ 检查", "  ↵ inspect"),
+                active_submit_hint: crate::tui::i18n::if_zh("  ↑↓ ←→ ↵ 退出", "  ↑↓ ←→ ↵ Esc"),
                 shows_default_shortcut_hint: false,
                 preview_activation_column: 2,
             },
@@ -1266,12 +1266,12 @@ impl InlineInteractiveState {
         if self.is_agent_target_picker() {
             InlineInteractiveSchema {
                 layout: InlineInteractiveLayout::ThreeColumn,
-                primary_label: "TARGET",
-                secondary_label: "MODEL",
-                secondary_preview_label: "MODEL",
-                tertiary_label: "CONFIG",
-                preview_submit_hint: "  ↵ open",
-                active_submit_hint: "  ↑↓ ←→ ↵ Esc",
+                primary_label: crate::tui::i18n::agent_target_primary_label(),
+                secondary_label: crate::tui::i18n::agent_target_secondary_label(),
+                secondary_preview_label: crate::tui::i18n::agent_target_secondary_label(),
+                tertiary_label: crate::tui::i18n::agent_target_tertiary_label(),
+                preview_submit_hint: crate::tui::i18n::if_zh("  ↵ 打开", "  ↵ open"),
+                active_submit_hint: crate::tui::i18n::if_zh("  ↑↓ ←→ ↵ 退出", "  ↑↓ ←→ ↵ Esc"),
                 shows_default_shortcut_hint: false,
                 preview_activation_column: 2,
             }
@@ -1434,11 +1434,11 @@ impl PickerEntry {
     pub fn compact_state_label(&self) -> Option<&'static str> {
         match &self.action {
             PickerAction::Account(AccountPickerAction::Switch { .. }) => {
-                Some(if self.is_current { "active" } else { "saved" })
+                Some(if self.is_current { crate::tui::i18n::account_state_active() } else { crate::tui::i18n::account_state_saved() })
             }
-            PickerAction::Account(AccountPickerAction::Add { .. }) => Some("add"),
-            PickerAction::Account(AccountPickerAction::Replace { .. }) => Some("replace"),
-            PickerAction::Account(AccountPickerAction::OpenCenter { .. }) => Some("manage"),
+            PickerAction::Account(AccountPickerAction::Add { .. }) => Some(crate::tui::i18n::account_state_add()),
+            PickerAction::Account(AccountPickerAction::Replace { .. }) => Some(crate::tui::i18n::account_state_replace()),
+            PickerAction::Account(AccountPickerAction::OpenCenter { .. }) => Some(crate::tui::i18n::account_state_manage()),
             PickerAction::Language(_) => Some(if self.is_current {
                 crate::tui::i18n::if_zh("当前", "current")
             } else {

@@ -138,7 +138,7 @@ impl App {
                                         self.stream_buffer.clear();
                                         self.streaming_tool_calls.clear();
                                         self.schedule_queued_dispatch_after_interrupt();
-                                        self.push_display_message(DisplayMessage::system("Interrupted"));
+                                        self.push_display_message(DisplayMessage::system(crate::tui::i18n::interrupted_label()));
                                         return Ok(());
                                     }
                                     if !scroll_only {
@@ -361,7 +361,7 @@ impl App {
                                         self.stream_buffer.clear();
                                         self.streaming_tool_calls.clear();
                                         self.schedule_queued_dispatch_after_interrupt();
-                                        self.push_display_message(DisplayMessage::system("Interrupted"));
+                                        self.push_display_message(DisplayMessage::system(crate::tui::i18n::interrupted_label()));
                                         return Ok(());
                                     }
                                     // Check for interleave request (Shift+Enter)
@@ -1325,7 +1325,7 @@ impl App {
                                             self.streaming_tool_calls.clear();
                                             self.batch_progress = None;
                                             self.schedule_queued_dispatch_after_interrupt();
-                                            self.push_display_message(DisplayMessage::system("Interrupted"));
+                                            self.push_display_message(DisplayMessage::system(crate::tui::i18n::interrupted_label()));
                                             return Ok(());
                                         }
 

@@ -1943,7 +1943,7 @@ impl App {
             if let Some((provider, method)) = pending.telemetry_context() {
                 crate::telemetry::record_auth_cancelled(&provider, &method);
             }
-            self.push_display_message(DisplayMessage::system("Login cancelled.".to_string()));
+            self.push_display_message(DisplayMessage::system(crate::tui::i18n::login_cancelled_label().to_string()));
             return;
         }
 

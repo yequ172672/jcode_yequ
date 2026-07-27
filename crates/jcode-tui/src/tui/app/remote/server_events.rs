@@ -1044,7 +1044,7 @@ pub(in crate::tui::app) fn handle_server_event(
                 ));
             }
             app.schedule_queued_dispatch_after_interrupt();
-            app.push_display_message(DisplayMessage::system("Interrupted"));
+            app.push_display_message(DisplayMessage::system(crate::tui::i18n::interrupted_label()));
             app.is_processing = false;
             app.status = ProcessingStatus::Idle;
             app.stream_message_ended = false;

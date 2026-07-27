@@ -29,11 +29,7 @@ pub(super) fn render_model_widget(data: &InfoWidgetData, inner: Rect) -> Vec<Lin
         let mut parts = Vec::new();
 
         if let Some(sessions) = data.session_count {
-            parts.push(format!(
-                "{} session{}",
-                sessions,
-                if sessions == 1 { "" } else { "s" }
-            ));
+            parts.push(crate::tui::i18n::session_count_label(sessions));
         }
 
         if let Some(name) = data.session_name.as_deref()
@@ -256,11 +252,7 @@ pub(super) fn render_model_info(data: &InfoWidgetData, inner: Rect) -> Vec<Line<
         let mut parts = Vec::new();
 
         if let Some(sessions) = data.session_count {
-            parts.push(format!(
-                "{} session{}",
-                sessions,
-                if sessions == 1 { "" } else { "s" }
-            ));
+            parts.push(crate::tui::i18n::session_count_label(sessions));
         }
 
         if let Some(name) = data.session_name.as_deref()

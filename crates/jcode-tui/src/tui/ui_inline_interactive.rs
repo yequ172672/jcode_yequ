@@ -65,13 +65,13 @@ fn picker_entry_display_name(entry: &crate::tui::PickerEntry) -> String {
         .map(crate::tui::i18n::effort_label)
         .map(|label| format!(" ({label})"))
         .unwrap_or_default();
-    let default_marker = if entry.is_default { " default" } else { "" };
+    let default_marker = if entry.is_default { crate::tui::i18n::entry_default_label() } else { "" };
     let is_new = entry
         .options
         .iter()
         .any(|option| option.detail.contains("recently added"));
     let suffix = if is_new && !entry.is_current {
-        format!(" new{}", default_marker)
+        format!("{}{}", crate::tui::i18n::entry_new_label(), default_marker)
     } else if entry.is_favorite {
         format!(" ♥{}", default_marker)
     } else if entry.recommended {
@@ -80,7 +80,7 @@ fn picker_entry_display_name(entry: &crate::tui::PickerEntry) -> String {
         if let Some(ref date) = entry.created_date {
             format!(" {}{}", date, default_marker)
         } else {
-            format!(" old{}", default_marker)
+            format!("{}{}", crate::tui::i18n::entry_old_label(), default_marker)
         }
     } else if let Some(ref date) = entry.created_date {
         if !entry.is_current {
@@ -564,7 +564,7 @@ pub(super) fn draw_inline_interactive(frame: &mut Frame, app: &dyn TuiState, are
         ));
         if picker.shows_default_shortcut_hint() {
             header_spans.push(Span::styled(
-                "  Ctrl-O=set default",
+                crate::tui::i18n::default_shortcut_hint(),
                 Style::default().fg(rgb(60, 60, 80)).italic(),
             ));
         }
@@ -599,7 +599,7 @@ pub(super) fn draw_inline_interactive(frame: &mut Frame, app: &dyn TuiState, are
 
     if picker.filtered.is_empty() {
         lines.push(Line::from(Span::styled(
-            "   no matches",
+            crate::tui::i18n::no_matches_label(),
             Style::default().fg(dim_color()).italic(),
         )));
         frame.render_widget(Paragraph::new(lines), inner);
@@ -1150,7 +1150,7 @@ mod tests {
         entry.is_current = false;
         entry.options[0].detail = "recently added · https://llm.comtegra.cloud/v1".to_string();
 
-        assert!(picker_entry_display_name(entry).contains(" new"));
+        assert!(picker_entry_display_name(entry).contains(" 新"));
     }
 
     #[test]
@@ -1169,7 +1169,7 @@ mod tests {
         let entry = &mut picker.entries[0];
         entry.is_default = true;
 
-        assert!(picker_entry_display_name(entry).contains(" default"));
+        assert!(picker_entry_display_name(entry).contains(" 默认"));
     }
 
     #[test]
@@ -1184,8 +1184,8 @@ mod tests {
         let picker = sample_picker();
         let hint = model_picker_top_hint(&picker).expect("active model picker should show hint");
 
-        assert!(hint.contains("Ctrl+O set default"));
-        assert!(hint.contains("Ctrl+N favorite"));
+        assert!(hint.contains("Ctrl+O 设置默认"));
+        assert!(hint.contains("Ctrl+N 收藏"));
     }
 
     #[test]
@@ -1214,7 +1214,7 @@ mod tests {
 
         entry.name = "gpt-5.5 (high)".to_string();
         entry.effort = Some("high".to_string());
-        assert_eq!(picker_entry_display_name(entry), "GPT-5.5 (high)");
+        assert_eq!(picker_entry_display_name(entry), "GPT-5.5 (高)");
     }
 
     #[test]
@@ -1228,10 +1228,10 @@ mod tests {
         entry.option_efforts = vec![Some("low".to_string()), Some("high".to_string())];
 
         entry.selected_option = 0;
-        assert_eq!(picker_entry_display_name(entry), "GPT-5.5 (low)");
+        assert_eq!(picker_entry_display_name(entry), "GPT-5.5 (低)");
 
         entry.selected_option = 1;
-        assert_eq!(picker_entry_display_name(entry), "GPT-5.5 (high)");
+        assert_eq!(picker_entry_display_name(entry), "GPT-5.5 (高)");
     }
 
     #[test]
@@ -1292,9 +1292,9 @@ mod tests {
         let picker = sample_agent_target_picker();
 
         assert!(picker.is_agent_target_picker());
-        assert_eq!(picker.primary_label(), "TARGET");
-        assert_eq!(picker.secondary_label(false), "MODEL");
-        assert_eq!(picker.tertiary_label(), "CONFIG");
+        assert_eq!(picker.primary_label(), crate::tui::i18n::agent_target_primary_label());
+        assert_eq!(picker.secondary_label(false), crate::tui::i18n::agent_target_secondary_label());
+        assert_eq!(picker.tertiary_label(), crate::tui::i18n::agent_target_tertiary_label());
         assert!(!picker.shows_default_shortcut_hint());
     }
 }

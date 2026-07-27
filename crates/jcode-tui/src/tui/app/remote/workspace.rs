@@ -76,7 +76,7 @@ pub(super) async fn handle_workspace_command(
         "/workspace off" => {
             app.workspace_client.disable();
             app.set_status_notice("Workspace mode disabled");
-            app.push_display_message(DisplayMessage::system("Workspace mode: off".to_string()));
+            app.push_display_message(DisplayMessage::system(crate::tui::i18n::workspace_mode_off().to_string()));
             return Ok(true);
         }
         _ => {}

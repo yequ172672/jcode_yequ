@@ -49,8 +49,8 @@ fn composer_mode(input: &str, is_remote_mode: bool) -> ComposerMode {
 
 fn shell_mode_hint(mode: ComposerMode) -> Option<&'static str> {
     match mode {
-        ComposerMode::ShellLocal => Some("  shell mode · Enter runs locally"),
-        ComposerMode::ShellRemote => Some("  shell mode · Enter runs on server"),
+        ComposerMode::ShellLocal => Some(crate::tui::i18n::shell_mode_local_hint()),
+        ComposerMode::ShellRemote => Some(crate::tui::i18n::shell_mode_remote_hint()),
         _ => None,
     }
 }
@@ -2523,7 +2523,7 @@ pub(super) fn draw_input(
         )));
     } else if app.next_prompt_new_session_armed() {
         hint_shown = true;
-        let hint = "  ↗ Next prompt opens a new session";
+        let hint = crate::tui::i18n::new_session_hint();
         hint_line = Some(hint.trim().to_string());
         lines.push(Line::from(Span::styled(
             hint,
@@ -2532,9 +2532,9 @@ pub(super) fn draw_input(
     } else if app.is_processing() && !input_text.is_empty() {
         hint_shown = true;
         let hint = if app.queue_mode() {
-            "  Ctrl/Cmd+Enter to send now"
+            crate::tui::i18n::send_now_hint()
         } else {
-            "  Ctrl/Cmd+Enter to queue"
+            crate::tui::i18n::queue_hint()
         };
         hint_line = Some(hint.trim().to_string());
         lines.push(Line::from(Span::styled(
