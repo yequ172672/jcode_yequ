@@ -1576,13 +1576,13 @@ impl SessionPicker {
                 {
                     let ago = format_time_ago(session.last_message_time);
                     let label = match &session.status {
-                        SessionStatus::Active => "active".to_string(),
-                        SessionStatus::Closed => format!("closed {}", ago),
-                        SessionStatus::Crashed { .. } => format!("crashed {}", ago),
-                        SessionStatus::Reloaded => format!("reloaded {}", ago),
-                        SessionStatus::Compacted => format!("compacted {}", ago),
-                        SessionStatus::RateLimited => format!("rate-limited {}", ago),
-                        SessionStatus::Error { .. } => format!("errored {}", ago),
+                        SessionStatus::Active => crate::tui::i18n::session_status_active().to_string(),
+                        SessionStatus::Closed => crate::tui::i18n::session_status_closed_format(&ago),
+                        SessionStatus::Crashed { .. } => crate::tui::i18n::session_status_crashed_format(&ago),
+                        SessionStatus::Reloaded => crate::tui::i18n::session_status_reloaded_format(&ago),
+                        SessionStatus::Compacted => crate::tui::i18n::session_status_compacted_format(&ago),
+                        SessionStatus::RateLimited => crate::tui::i18n::session_status_rate_limited_format(&ago),
+                        SessionStatus::Error { .. } => crate::tui::i18n::session_status_errored_format(&ago),
                     };
                     Span::styled(format!("  {}", label), Style::default().fg(dim_color))
                 },

@@ -303,6 +303,88 @@ pub fn no_rewind_label() -> &'static str {
 pub fn workspace_mode_off() -> &'static str {
     if_zh("工作区模式：关", "Workspace mode: off")
 }
+
+pub fn workspace_mode_on() -> &'static str {
+    if_zh("工作区模式：开", "Workspace mode: on")
+}
+pub fn workspace_current_workspace() -> &'static str {
+    if_zh("当前工作区", "Current workspace")
+}
+pub fn workspace_visible_rows() -> &'static str {
+    if_zh("可见行数", "Visible rows")
+}
+pub fn workspace_populated_workspaces() -> &'static str {
+    if_zh("已使用工作区数", "Populated workspaces")
+}
+pub fn workspace_mapped_sessions() -> &'static str {
+    if_zh("已映射会话数", "Mapped sessions")
+}
+pub fn scheduled_tasks_active_label() -> &'static str {
+    if_zh("已调度任务活跃", "Scheduled tasks active")
+}
+pub fn scheduled_tasks_label(count: usize) -> String {
+    match current_language() {
+        Language::Zh => format!("{} 个已调度任务", count),
+        Language::En => {
+            if count == 1 {
+                "1 scheduled task".to_string()
+            } else {
+                format!("{} scheduled tasks", count)
+            }
+        }
+    }
+}
+pub fn tasks_queued_label(count: usize) -> String {
+    match current_language() {
+        Language::Zh => format!("{} 个排队任务", count),
+        Language::En => {
+            if count == 1 {
+                "1 task queued".to_string()
+            } else {
+                format!("{} tasks queued", count)
+            }
+        }
+    }
+}
+pub fn not_running_label() -> &'static str {
+    if_zh("未运行", "Not running")
+}
+pub fn memory_label(count: usize) -> &'static str {
+    match current_language() {
+        Language::Zh => "记忆",
+        Language::En => if count == 1 { "memory" } else { "memories" },
+    }
+}
+pub fn remote_starting_server() -> &'static str {
+    if_zh("正在启动服务器…", "starting server…")
+}
+pub fn remote_connecting() -> &'static str {
+    if_zh("正在连接服务器…", "connecting to server…")
+}
+pub fn remote_loading_session() -> &'static str {
+    if_zh("正在加载会话…", "loading session…")
+}
+pub fn remote_waiting_for_reload() -> &'static str {
+    if_zh("正在等待重载…", "waiting for reload…")
+}
+pub fn remote_reconnecting(attempt: u32) -> String {
+    match current_language() {
+        Language::Zh => format!("正在重连（第 {} 次）…", attempt),
+        Language::En => format!("reconnecting ({attempt})…"),
+    }
+}
+pub fn improve_active_loop() -> &'static str {
+    if_zh("活跃改进循环", "active improvement loop")
+}
+pub fn improve_plan_only() -> &'static str {
+    if_zh("仅改进计划", "improvement plan-only")
+}
+pub fn refactor_active_loop() -> &'static str {
+    if_zh("活跃重构循环", "active refactor loop")
+}
+pub fn refactor_plan_only() -> &'static str {
+    if_zh("仅重构计划", "refactor plan-only")
+}
 pub fn subagent_model_usage(current_summary: &str) -> String {
     match current_language() {
         Language::Zh => format!(

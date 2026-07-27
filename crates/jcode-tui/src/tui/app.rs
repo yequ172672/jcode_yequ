@@ -441,11 +441,11 @@ pub(crate) enum RemoteStartupPhase {
 impl RemoteStartupPhase {
     pub(crate) fn header_label(&self) -> String {
         match self {
-            Self::StartingServer => "starting server…".to_string(),
-            Self::Connecting => "connecting to server…".to_string(),
-            Self::LoadingSession => "loading session…".to_string(),
-            Self::WaitingForReload => "waiting for reload…".to_string(),
-            Self::Reconnecting { attempt } => format!("reconnecting ({attempt})…"),
+            Self::StartingServer => crate::tui::i18n::remote_starting_server().to_string(),
+            Self::Connecting => crate::tui::i18n::remote_connecting().to_string(),
+            Self::LoadingSession => crate::tui::i18n::remote_loading_session().to_string(),
+            Self::WaitingForReload => crate::tui::i18n::remote_waiting_for_reload().to_string(),
+            Self::Reconnecting { attempt } => crate::tui::i18n::remote_reconnecting(*attempt),
         }
     }
 
@@ -564,10 +564,10 @@ pub(super) enum ImproveMode {
 impl ImproveMode {
     pub(super) fn status_label(self) -> &'static str {
         match self {
-            Self::ImproveRun => "active improvement loop",
-            Self::ImprovePlan => "improvement plan-only",
-            Self::RefactorRun => "active refactor loop",
-            Self::RefactorPlan => "refactor plan-only",
+            Self::ImproveRun => crate::tui::i18n::improve_active_loop(),
+            Self::ImprovePlan => crate::tui::i18n::improve_plan_only(),
+            Self::RefactorRun => crate::tui::i18n::refactor_active_loop(),
+            Self::RefactorPlan => crate::tui::i18n::refactor_plan_only(),
         }
     }
 

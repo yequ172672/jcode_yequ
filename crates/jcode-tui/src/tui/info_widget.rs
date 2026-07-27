@@ -1882,10 +1882,10 @@ fn render_ambient_widget(data: &InfoWidgetData, inner: Rect) -> Vec<Line<'static
         ),
         AmbientStatus::Disabled if info.reminder_count > 0 => (
             "⏰",
-            "Scheduled tasks active".to_string(),
+            crate::tui::i18n::scheduled_tasks_active_label().to_string(),
             rgb(140, 180, 255),
         ),
-        AmbientStatus::Disabled => ("○", "Not running".to_string(), dim),
+        AmbientStatus::Disabled => ("○", crate::tui::i18n::not_running_label().to_string(), dim),
     };
 
     lines.push(Line::from(vec![
@@ -1913,14 +1913,14 @@ fn render_ambient_widget(data: &InfoWidgetData, inner: Rect) -> Vec<Line<'static
         let count_text =
             if matches!(info.status, AmbientStatus::Disabled) && info.reminder_count > 0 {
                 if queue_count == 1 {
-                    "1 scheduled task".to_string()
+                    crate::tui::i18n::scheduled_tasks_label(1)
                 } else {
-                    format!("{} scheduled tasks", queue_count)
+                    crate::tui::i18n::scheduled_tasks_label(queue_count)
                 }
             } else if queue_count == 1 {
-                "1 task queued".to_string()
+                crate::tui::i18n::tasks_queued_label(queue_count)
             } else {
-                format!("{} tasks queued", queue_count)
+                crate::tui::i18n::tasks_queued_label(queue_count)
             };
         let mut spans = vec![
             Span::styled("  ", Style::default()),
@@ -2131,7 +2131,7 @@ fn format_event_for_expanded(
             items,
             ..
         } => {
-            let plural = if *count == 1 { "memory" } else { "memories" };
+            let plural = crate::tui::i18n::memory_label(*count);
             let detail = items
                 .first()
                 .map(|item| format!(" [{}]", item.section))

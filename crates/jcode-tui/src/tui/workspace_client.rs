@@ -51,16 +51,21 @@ impl WorkspaceClientState {
 
     pub(crate) fn status_summary(&self) -> String {
         if !self.enabled {
-            return "Workspace mode: off".to_string();
+            return crate::tui::i18n::workspace_mode_off().to_string();
         }
         let rows = self.map.visible_rows(5);
         let populated = self.map.populated_workspaces().len();
         let total_sessions: usize = rows.iter().map(|row| row.sessions.len()).sum();
         format!(
-            "Workspace mode: on\nCurrent workspace: {}\nVisible rows: {}\nPopulated workspaces: {}\nMapped sessions: {}",
+            "{}\n{}: {}\n{}: {}\n{}: {}\n{}: {}",
+            crate::tui::i18n::workspace_mode_on(),
+            crate::tui::i18n::workspace_current_workspace(),
             self.map.current_workspace(),
+            crate::tui::i18n::workspace_visible_rows(),
             rows.len(),
+            crate::tui::i18n::workspace_populated_workspaces(),
             populated,
+            crate::tui::i18n::workspace_mapped_sessions(),
             total_sessions
         )
     }
