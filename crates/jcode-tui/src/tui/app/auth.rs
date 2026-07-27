@@ -288,30 +288,30 @@ impl App {
             LoginProviderTarget::Jcode => unreachable!("handled above"),
             LoginProviderTarget::Claude => {
                 let removed = crate::auth::claude::clear_accounts()?;
-                Ok(format!("Logged out of {} Anthropic account(s).", removed))
+                Ok(crate::tui::i18n::logout_anthropic_accounts(removed))
             }
             LoginProviderTarget::ClaudeApiKey => {
                 Self::clear_api_key_login("ANTHROPIC_API_KEY", "anthropic.env")?;
-                Ok("Logged out of Anthropic API key.".to_string())
+                Ok(crate::tui::i18n::logout_anthropic_api_key().to_string())
             }
             LoginProviderTarget::OpenAi => {
                 let removed = crate::auth::codex::clear_accounts()?;
-                Ok(format!("Logged out of {} OpenAI account(s).", removed))
+                Ok(crate::tui::i18n::logout_openai_accounts(removed))
             }
             LoginProviderTarget::OpenAiApiKey => {
                 Self::clear_api_key_login("OPENAI_API_KEY", "openai.env")?;
-                Ok("Logged out of OpenAI API key.".to_string())
+                Ok(crate::tui::i18n::logout_openai_api_key().to_string())
             }
             LoginProviderTarget::OpenRouter => {
                 Self::clear_api_key_login("OPENROUTER_API_KEY", "openrouter.env")?;
-                Ok("Logged out of OpenRouter API key.".to_string())
+                Ok(crate::tui::i18n::logout_openrouter_api_key().to_string())
             }
             LoginProviderTarget::Bedrock => {
                 Self::clear_api_key_login(
                     crate::provider::bedrock::API_KEY_ENV,
                     crate::provider::bedrock::ENV_FILE,
                 )?;
-                Ok("Logged out of Bedrock API key.".to_string())
+                Ok(crate::tui::i18n::logout_bedrock_api_key().to_string())
             }
             LoginProviderTarget::Azure => {
                 Self::clear_api_key_login(
@@ -337,7 +337,7 @@ impl App {
             }
             LoginProviderTarget::Cursor => {
                 crate::auth::cursor::clear_api_key()?;
-                Ok("Logged out of Cursor API key.".to_string())
+                Ok(crate::tui::i18n::logout_cursor_api_key().to_string())
             }
             LoginProviderTarget::Gemini => {
                 crate::auth::gemini::clear_tokens()?;

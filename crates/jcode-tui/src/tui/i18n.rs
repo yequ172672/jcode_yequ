@@ -893,4 +893,25 @@ pub fn input_restored_from_stash() -> &'static str { if_zh("", "📋 Input resto
 pub fn input_stashed() -> &'static str { if_zh("", "📋 Input stashed") }
 pub fn swapped_input_with_stash() -> &'static str { if_zh("", "📋 Swapped input with stash") }
 pub fn bookmark_set_press_again_to_return() -> &'static str { if_zh("", "📌 Bookmark set - press again to return") }
+
+// -- Auth login/logout --
+pub fn logout_anthropic_api_key() -> &'static str { if_zh("已登出 Anthropic API 密钥。", "Logged out of Anthropic API key.") }
+pub fn logout_openai_api_key() -> &'static str { if_zh("已登出 OpenAI API 密钥。", "Logged out of OpenAI API key.") }
+pub fn logout_openrouter_api_key() -> &'static str { if_zh("已登出 OpenRouter API 密钥。", "Logged out of OpenRouter API key.") }
+pub fn logout_bedrock_api_key() -> &'static str { if_zh("已登出 Bedrock API 密钥。", "Logged out of Bedrock API key.") }
+pub fn logout_cursor_api_key() -> &'static str { if_zh("已登出 Cursor API 密钥。", "Logged out of Cursor API key.") }
+pub fn logout_gemini_api_key() -> &'static str { if_zh("已登出 Gemini API 密钥。", "Logged out of Gemini API key.") }
+pub fn logout_copilot() -> &'static str { if_zh("已登出 Copilot。", "Logged out of Copilot.") }
+pub fn logout_openai_accounts(count: usize) -> String {
+    match current_language() {
+        Language::Zh => format!("已登出 {} 个 OpenAI 账户。", count),
+        Language::En => format!("Logged out of {} OpenAI account(s).", count),
+    }
+}
+pub fn logout_anthropic_accounts(count: usize) -> String {
+    match current_language() {
+        Language::Zh => format!("已登出 {} 个 Anthropic 账户。", count),
+        Language::En => format!("Logged out of {} Anthropic account(s).", count),
+    }
+}
 pub fn returned_to_bookmark() -> &'static str { if_zh("", "📌 Returned to bookmark") }
