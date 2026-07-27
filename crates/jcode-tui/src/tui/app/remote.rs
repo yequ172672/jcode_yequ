@@ -1794,6 +1794,17 @@ fn handle_disconnected_key_internal(
     let mut modifiers = modifiers;
     ctrl_bracket_fallback_to_esc(&mut code, &mut modifiers);
 
+    if app
+        .inline_interactive_state
+        .as_ref()
+        .is_some_and(|picker| !picker.preview)
+    {
+        return app.handle_inline_interactive_key(code, modifiers);
+    }
+    if app.handle_inline_interactive_preview_key(&code, modifiers)? {
+        return Ok(());
+    }
+
     if input::handle_navigation_shortcuts(app, code, modifiers) {
         return Ok(());
     }

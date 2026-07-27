@@ -1150,6 +1150,7 @@ impl App {
                     input.starts_with("/model") || input.starts_with("/models")
                 }
                 crate::tui::PickerKind::Login => input.starts_with("/login"),
+                crate::tui::PickerKind::Language => input.starts_with("/language"),
                 _ => false,
             };
             if suppress {

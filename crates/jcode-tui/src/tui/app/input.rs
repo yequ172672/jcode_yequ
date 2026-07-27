@@ -1016,7 +1016,12 @@ pub(super) fn insert_input_text(app: &mut App, text: &str) {
     // A habitual space typed after an auto-inserted picker separator would
     // only add noise. Swallow it so command + space + filter still produces
     // a single separator.
-    if text == " " && at_end && matches!(app.input.trim_start(), "/language " | "/login " | "/model " | "/models ")
+    if text == " "
+        && at_end
+        && matches!(
+            app.input.trim_start(),
+            "/language " | "/login " | "/model " | "/models "
+        )
     {
         return;
     }
@@ -1027,7 +1032,10 @@ pub(super) fn insert_input_text(app: &mut App, text: &str) {
     // space), the next printable character starts its filter. Insert the
     // separator instead of extending the command token and closing the picker.
     if at_end
-        && matches!(app.input.trim_start(), "/language" | "/login" | "/model" | "/models")
+        && matches!(
+            app.input.trim_start(),
+            "/language" | "/login" | "/model" | "/models"
+        )
         && !text.starts_with(char::is_whitespace)
     {
         app.input.push(' ');
@@ -1041,7 +1049,10 @@ pub(super) fn insert_input_text(app: &mut App, text: &str) {
     // Without this, users can keep typing the command token or press Enter
     // without realizing the visible picker is ready to filter.
     if app.cursor_pos == app.input.len()
-        && matches!(app.input.trim_start(), "/language" | "/login" | "/model" | "/models")
+        && matches!(
+            app.input.trim_start(),
+            "/language" | "/login" | "/model" | "/models"
+        )
     {
         app.input.push(' ');
         app.cursor_pos = app.input.len();

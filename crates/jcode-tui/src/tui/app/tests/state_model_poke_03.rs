@@ -42,6 +42,124 @@ fn test_model_picker_preview_arrow_keys_navigate() {
 }
 
 #[test]
+fn test_language_picker_preview_lists_english_and_chinese() {
+    let mut app = create_test_app();
+
+    for c in "/language".chars() {
+        app.handle_key(KeyCode::Char(c), KeyModifiers::empty())
+            .unwrap();
+    }
+
+    let picker = app
+        .inline_interactive_state
+        .as_ref()
+        .expect("language picker preview should be open");
+    assert!(picker.preview);
+    assert_eq!(picker.kind, crate::tui::PickerKind::Language);
+    assert_eq!(app.input(), "/language ");
+    assert!(picker.entries.iter().any(|entry| entry.name == "English"));
+    assert!(
+        picker
+            .entries
+            .iter()
+            .any(|entry| entry.name == "中文（简体）")
+    );
+}
+
+#[test]
+fn test_language_picker_preview_enter_focuses_current_then_persists_chinese() {
+    with_temp_jcode_home(|| {
+        let mut config = crate::config::Config::load();
+        config.display.language = Some("en".to_string());
+        config.save().expect("save English language fixture");
+        crate::config::Config::invalidate_cache();
+        let mut app = create_test_app();
+
+        for c in "/language".chars() {
+            app.handle_key(KeyCode::Char(c), KeyModifiers::empty())
+                .unwrap();
+        }
+        let picker = app
+            .inline_interactive_state
+            .as_ref()
+            .expect("language picker preview should be open");
+        assert!(picker.preview);
+        assert!(picker.entries[picker.filtered[picker.selected]].is_current);
+
+        // Enter on the current language focuses the chooser instead of silently
+        // re-applying English and closing it.
+        app.handle_key(KeyCode::Enter, KeyModifiers::empty())
+            .unwrap();
+        let picker = app
+            .inline_interactive_state
+            .as_ref()
+            .expect("language chooser should remain open");
+        assert!(!picker.preview);
+        assert_eq!(app.input(), "");
+        assert_eq!(
+            crate::config::Config::load().display.language.as_deref(),
+            Some("en")
+        );
+
+        app.handle_key(KeyCode::Down, KeyModifiers::empty())
+            .unwrap();
+        app.handle_key(KeyCode::Enter, KeyModifiers::empty())
+            .unwrap();
+
+        assert!(app.inline_interactive_state.is_none());
+        assert_eq!(app.status_notice(), Some("语言：中文".to_string()));
+        assert_eq!(
+            crate::config::Config::load().display.language.as_deref(),
+            Some("zh")
+        );
+    });
+    crate::config::Config::invalidate_cache();
+}
+
+#[test]
+fn test_model_picker_preview_left_right_changes_effort_not_input_cursor() {
+    let mut app = create_test_app();
+    configure_test_remote_models_with_openai_recommendations(&mut app);
+
+    for c in "/model".chars() {
+        app.handle_key(KeyCode::Char(c), KeyModifiers::empty())
+            .unwrap();
+    }
+
+    let picker = app
+        .inline_interactive_state
+        .as_mut()
+        .expect("model picker preview should be open");
+    let entry_idx = picker
+        .entries
+        .iter()
+        .position(|entry| entry.name == "gpt-5.5" && entry.option_efforts.len() > 1)
+        .expect("gpt-5.5 effort entry should be present");
+    picker.selected = picker
+        .filtered
+        .iter()
+        .position(|&idx| idx == entry_idx)
+        .expect("gpt-5.5 should be in the filtered list");
+    let initial_option = picker.entries[entry_idx].selected_option;
+    let initial_input = app.input().to_string();
+
+    app.handle_key(KeyCode::Right, KeyModifiers::empty())
+        .unwrap();
+
+    let picker = app
+        .inline_interactive_state
+        .as_ref()
+        .expect("model picker preview should remain open");
+    assert_ne!(picker.entries[entry_idx].selected_option, initial_option);
+    assert_eq!(app.input(), initial_input);
+
+    app.handle_key(KeyCode::Left, KeyModifiers::empty()).unwrap();
+    let picker = app.inline_interactive_state.as_ref().unwrap();
+    assert_eq!(picker.entries[entry_idx].selected_option, initial_option);
+    assert_eq!(app.input(), initial_input);
+}
+
+#[test]
 fn test_open_model_picker_without_routes_shows_actionable_guidance() {
     let mut app = create_test_app();
 

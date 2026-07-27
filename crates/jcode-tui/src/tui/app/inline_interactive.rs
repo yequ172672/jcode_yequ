@@ -20,7 +20,7 @@ use helpers::{
     agent_model_default_summary, agent_model_target_label, catchup_candidates,
     catchup_queue_position, model_entry_base_name, model_entry_saved_spec,
     openrouter_route_model_id, picker_route_model_spec, picker_route_selection,
-    save_agent_model_override,
+    save_agent_model_override, split_model_effort_suffix,
 };
 
 const REMOTE_MODEL_CATALOG_CACHE_FILE: &str = "remote_model_catalog_cache.json";
@@ -62,6 +62,12 @@ struct ModelPickerUsageStore {
 struct ModelPickerFavoritesStore {
     version: u8,
     favorites: HashSet<String>,
+}
+
+struct ModelPickerSourceGroup {
+    provider: String,
+    method: crate::provider::ModelRouteApiMethod,
+    routes: Vec<(PickerOption, Vec<&'static str>)>,
 }
 
 fn model_picker_usage_path() -> Option<std::path::PathBuf> {
@@ -247,6 +253,21 @@ fn picker_is_runtime_model_picker(picker: &InlineInteractiveState) -> bool {
             .entries
             .iter()
             .any(|entry| matches!(entry.action, PickerAction::Model))
+}
+
+fn picker_preview_enter_should_focus(picker: &InlineInteractiveState) -> bool {
+    if !picker.filter.is_empty() {
+        return false;
+    }
+    match picker.kind {
+        PickerKind::Login => picker.selected == 0,
+        PickerKind::Language => picker
+            .filtered
+            .get(picker.selected)
+            .and_then(|&idx| picker.entries.get(idx))
+            .is_some_and(|entry| entry.is_current),
+        _ => false,
+    }
 }
 
 fn key_char_eq_ignore_ascii_case(code: KeyCode, expected: char) -> bool {
@@ -986,13 +1007,16 @@ impl App {
             self.hydrate_remote_model_catalog_cache();
         }
 
-        let current_model = if self.is_remote {
+        let current_model_raw = if self.is_remote {
             self.remote_provider_model
                 .clone()
                 .unwrap_or_else(|| "unknown".to_string())
         } else {
             self.provider.model().to_string()
         };
+        let (current_model_base, current_model_suffix_effort) =
+            split_model_effort_suffix(&current_model_raw);
+        let current_model = current_model_base.to_string();
 
         // Never present the old catalog as authoritative immediately after a
         // login/import. Local mode clears this when the provider's synchronous
@@ -1011,7 +1035,8 @@ impl App {
             self.remote_reasoning_effort.clone()
         } else {
             self.provider.reasoning_effort()
-        };
+        }
+        .or_else(|| current_model_suffix_effort.map(str::to_string));
         let available_efforts = if self.is_remote {
             inferred_reasoning_efforts(
                 self.remote_provider_name.as_deref(),
@@ -1237,13 +1262,16 @@ impl App {
             return false;
         }
 
-        let current_model = if self.is_remote {
+        let current_model_raw = if self.is_remote {
             self.remote_provider_model
                 .clone()
                 .unwrap_or_else(|| "unknown".to_string())
         } else {
             self.provider.model().to_string()
         };
+        let (current_model_base, current_model_suffix_effort) =
+            split_model_effort_suffix(&current_model_raw);
+        let current_model = current_model_base.to_string();
         let config = crate::config::config();
         let config_default_model = config.provider.default_model.clone();
         let config_default_provider = config.provider.default_provider.clone();
@@ -1251,7 +1279,8 @@ impl App {
             self.remote_reasoning_effort.clone()
         } else {
             self.provider.reasoning_effort()
-        };
+        }
+        .or_else(|| current_model_suffix_effort.map(str::to_string));
         let available_efforts = if self.is_remote {
             inferred_reasoning_efforts(
                 self.remote_provider_name.as_deref(),
@@ -1304,13 +1333,16 @@ impl App {
     ) -> Vec<crate::provider::ModelRoute> {
         use std::collections::BTreeMap;
 
-        let current_model = if self.is_remote {
+        let current_model_raw = if self.is_remote {
             self.remote_provider_model
                 .clone()
                 .unwrap_or_else(|| "unknown".to_string())
         } else {
             self.provider.model().to_string()
         };
+        let (current_model_base, current_model_suffix_effort) =
+            split_model_effort_suffix(&current_model_raw);
+        let current_model = current_model_base.to_string();
         let config = crate::config::config();
         let config_default_model = config.provider.default_model.clone();
         let config_default_provider = config.provider.default_provider.clone();
@@ -1318,7 +1350,8 @@ impl App {
             self.remote_reasoning_effort.clone()
         } else {
             self.provider.reasoning_effort()
-        };
+        }
+        .or_else(|| current_model_suffix_effort.map(str::to_string));
 
         let is_config_default = |name: &str, route: &PickerOption| -> bool {
             model_picker_route_is_default(
@@ -1362,21 +1395,26 @@ impl App {
 
         let grouping_started = std::time::Instant::now();
         let mut model_order: Vec<String> = Vec::new();
-        let mut model_options: BTreeMap<String, Vec<PickerOption>> = BTreeMap::new();
+        let mut model_options: BTreeMap<String, Vec<(PickerOption, Option<&'static str>)>> =
+            BTreeMap::new();
         for r in &routes {
-            if !model_options.contains_key(&r.model) {
-                model_order.push(r.model.clone());
+            let (base_model, explicit_effort) = split_model_effort_suffix(&r.model);
+            if !model_options.contains_key(base_model) {
+                model_order.push(base_model.to_string());
             }
             model_options
-                .entry(r.model.clone())
+                .entry(base_model.to_string())
                 .or_default()
-                .push(PickerOption {
-                    provider: r.provider.clone(),
-                    api_method: r.api_method.clone(),
-                    available: r.available,
-                    detail: r.detail.clone(),
-                    estimated_reference_cost_micros: r.estimated_reference_cost_micros(),
-                });
+                .push((
+                    PickerOption {
+                        provider: r.provider.clone(),
+                        api_method: r.api_method.clone(),
+                        available: r.available,
+                        detail: r.detail.clone(),
+                        estimated_reference_cost_micros: r.estimated_reference_cost_micros(),
+                    },
+                    explicit_effort,
+                ));
         }
         let grouping_ms = grouping_started.elapsed().as_millis();
 
@@ -1447,16 +1485,16 @@ impl App {
         let mut entries: Vec<PickerEntry> = Vec::new();
         for name in &model_order {
             let mut entry_routes = model_options.remove(name).unwrap_or_default();
-            entry_routes.sort_by_key(route_sort_key);
+            entry_routes.sort_by_key(|(route, _)| route_sort_key(route));
             let recently_authenticated = recent_auth_provider
                 .map(|provider| {
                     entry_routes
                         .iter()
-                        .any(|route| route_matches_recent_auth(&route.provider, provider))
+                        .any(|(route, _)| route_matches_recent_auth(&route.provider, provider))
                 })
                 .unwrap_or(false);
             if recently_authenticated {
-                for route in &mut entry_routes {
+                for (route, _) in &mut entry_routes {
                     if recent_auth_provider
                         .map(|provider| route_matches_recent_auth(&route.provider, provider))
                         .unwrap_or(false)
@@ -1471,37 +1509,58 @@ impl App {
                 }
             }
 
-            // Expand each route only across the effort ladder its runtime can
-            // actually apply. The same model can be reachable through native
-            // OpenAI (where `max` is real) and OpenRouter (where `max` aliases
-            // `xhigh`), so model-id-only inference over-advertises values.
-            let mut effort_routes = Vec::new();
-            let mut plain_routes = Vec::new();
-            for route in entry_routes {
-                let efforts = if route_supports_reasoning_effort(&route.api_method) {
+            // One row represents one model from one concrete source. Duplicate
+            // catalog rows with related provider labels and the same canonical
+            // API method are folded together, including legacy model names such
+            // as `gpt-5.5(high)`. Distinct authentication/routing methods remain
+            // separate so OAuth, API-key, OpenRouter, and compatible endpoints
+            // stay independently selectable.
+            let mut source_groups: Vec<ModelPickerSourceGroup> = Vec::new();
+            for (route, explicit_effort) in entry_routes {
+                let efforts = if let Some(effort) = explicit_effort {
+                    vec![effort]
+                } else if route_supports_reasoning_effort(&route.api_method) {
                     inferred_reasoning_efforts(Some(&route.api_method), Some(name))
                 } else {
                     Vec::new()
                 };
-                if efforts.is_empty() {
-                    plain_routes.push(route);
+                let canonical_method =
+                    crate::provider::ModelRouteApiMethod::parse(&route.api_method);
+                if let Some(group) = source_groups.iter_mut().find(|group| {
+                    group.method == canonical_method
+                        && jcode_provider_core::model_route_provider_labels_related(
+                            &group.provider,
+                            &route.provider,
+                        )
+                }) {
+                    group.routes.push((route, efforts));
                 } else {
-                    effort_routes.push((route, efforts));
+                    source_groups.push(ModelPickerSourceGroup {
+                        provider: route.provider.clone(),
+                        method: canonical_method,
+                        routes: vec![(route, efforts)],
+                    });
                 }
             }
 
-            if !effort_routes.is_empty() {
-                // Merge effort levels per route: each route gets one entry with
-                // multiple options (one per effort level). This preserves route
-                // separation while collapsing the effort ladder into a single
-                // selectable row that the user cycles with Left/Right arrows.
-                for (route, route_efforts) in &effort_routes {
-                    let mut merged_options: Vec<PickerOption> = Vec::new();
-                    let mut option_efforts: Vec<Option<String>> = Vec::new();
+            for group in source_groups {
+                let source_routes = group.routes;
+                let mut merged_options: Vec<PickerOption> = Vec::new();
+                let mut option_efforts: Vec<Option<String>> = Vec::new();
+                for (route, route_efforts) in &source_routes {
+                    if route_efforts.is_empty() {
+                        merged_options.push(route.clone());
+                        option_efforts.push(None);
+                        continue;
+                    }
                     for effort in route_efforts {
-                        // Swarm modes are orchestration rungs, not per-model
-                        // reasoning variants. They must not generate picker rows.
                         if crate::prompt::is_swarm_mode_effort(effort) {
+                            continue;
+                        }
+                        if option_efforts
+                            .iter()
+                            .any(|existing| existing.as_deref() == Some(*effort))
+                        {
                             continue;
                         }
                         let effort_label = match *effort {
@@ -1509,6 +1568,7 @@ impl App {
                             "max" => "max",
                             "high" => "high",
                             "medium" => "med",
+                            "minimal" => "minimal",
                             "low" => "low",
                             "none" => "none",
                             other => other,
@@ -1516,107 +1576,78 @@ impl App {
                         let mut opt = route.clone();
                         // Append effort info to route detail
                         if !opt.detail.is_empty() {
-                            opt.detail =
-                                format!("{} (effort: {})", opt.detail, effort_label);
+                            opt.detail = format!("{} (effort: {})", opt.detail, effort_label);
                         } else {
                             opt.detail = format!("effort: {}", effort_label);
                         }
                         merged_options.push(opt);
                         option_efforts.push(Some(effort.to_string()));
                     }
-
-                    if merged_options.is_empty() {
-                        continue;
-                    }
-
-                    let effort_matches_current = *name == current_model
-                        && current_effort.as_deref().is_some()
-                        && model_picker_route_is_current(
-                            name,
-                            route,
-                            &current_model,
-                            &current_provider,
-                        );
-                    let current_option_idx = if effort_matches_current {
-                        option_efforts
-                            .iter()
-                            .position(|e| e.as_deref() == current_effort.as_deref())
-                            .unwrap_or(0)
-                    } else {
-                        // Default to "high" or the first available effort
-                        option_efforts
-                            .iter()
-                            .position(|e| e.as_deref() == Some("high"))
-                            .unwrap_or(0)
-                    };
-                    let or_created = openrouter_created_timestamp(name);
-                    let first_opt = merged_options[0].clone();
-                    let is_this_current = effort_matches_current
-                        && model_picker_route_is_current(
-                            name,
-                            route,
-                            &current_model,
-                            &current_provider,
-                        );
-                    entries.push(PickerEntry {
-                        name: name.clone(),
-                        options: merged_options,
-                        action: PickerAction::Model,
-                        selected_option: current_option_idx,
-                        is_current: is_this_current,
-                        recommended: model_picker_route_is_recommended(name, &first_opt),
-                        recommendation_rank: model_picker_recommendation_rank(name),
-                        usage_score: model_picker_usage_score(
-                            &usage_store,
-                            name,
-                            &first_opt,
-                            None,
-                        ),
-                        old: old_threshold_secs > 0
-                            && or_created.map(|t| t < old_threshold_secs).unwrap_or(false),
-                        created_date: or_created.map(format_created),
-                        effort: None, // merged entry - effort is per-option
-                        is_default: is_config_default(name, route),
-                        is_favorite: model_picker_is_favorite(
-                            &favorites_store,
-                            name,
-                            route,
-                            None,
-                        ),
-                        option_efforts,
-                    });
                 }
-            }
-            {
+
+                if merged_options.is_empty() {
+                    continue;
+                }
+
+                let source_is_current = *name == current_model
+                    && source_routes.iter().any(|(route, _)| {
+                        model_picker_route_is_current(
+                            name,
+                            route,
+                            &current_model,
+                            &current_provider,
+                        )
+                    });
+                let current_option_idx = if source_is_current {
+                    option_efforts
+                        .iter()
+                        .position(|effort| effort.as_deref() == current_effort.as_deref())
+                } else {
+                    None
+                }
+                .or_else(|| {
+                    option_efforts
+                        .iter()
+                        .position(|effort| effort.as_deref() == Some("high"))
+                })
+                .unwrap_or(0);
+                let selected_route = merged_options[current_option_idx].clone();
+                let selected_effort = option_efforts[current_option_idx].clone();
                 let or_created = openrouter_created_timestamp(name);
-                let is_old = old_threshold_secs > 0
-                    && or_created.map(|t| t < old_threshold_secs).unwrap_or(false);
-                for route in plain_routes {
-                    let is_recommended = model_picker_route_is_recommended(name, &route);
-                    let is_current = model_picker_route_is_current(
+                let has_effort_options = option_efforts.iter().any(Option::is_some);
+                entries.push(PickerEntry {
+                    name: name.clone(),
+                    options: merged_options,
+                    action: PickerAction::Model,
+                    selected_option: current_option_idx,
+                    is_current: source_is_current,
+                    recommended: model_picker_route_is_recommended(name, &selected_route),
+                    recommendation_rank: model_picker_recommendation_rank(name),
+                    usage_score: model_picker_usage_score(
+                        &usage_store,
                         name,
-                        &route,
-                        &current_model,
-                        &current_provider,
-                    );
-                    let is_default = is_config_default(name, &route);
-                    entries.push(PickerEntry {
-                        name: name.clone(),
-                        options: vec![route.clone()],
-                        action: PickerAction::Model,
-                        selected_option: 0,
-                        is_current,
-                        recommended: is_recommended,
-                        recommendation_rank: model_picker_recommendation_rank(name),
-                        usage_score: model_picker_usage_score(&usage_store, name, &route, None),
-                        old: is_old,
-                        created_date: or_created.map(format_created),
-                        effort: None,
-                        option_efforts: vec![],
-                        is_default,
-                        is_favorite: model_picker_is_favorite(&favorites_store, name, &route, None),
-                    });
-                }
+                        &selected_route,
+                        selected_effort.as_deref(),
+                    ),
+                    old: old_threshold_secs > 0
+                        && or_created.map(|t| t < old_threshold_secs).unwrap_or(false),
+                    created_date: or_created.map(format_created),
+                    effort: None,
+                    is_default: source_routes
+                        .iter()
+                        .any(|(route, _)| is_config_default(name, route)),
+                    is_favorite: model_picker_is_favorite(
+                        &favorites_store,
+                        name,
+                        &selected_route,
+                        selected_effort.as_deref(),
+                    ),
+                    option_efforts: if has_effort_options {
+                        option_efforts
+                    } else {
+                        vec![]
+                    },
+                });
             }
         }
 
@@ -2077,6 +2108,29 @@ impl App {
                 }
                 Ok(true)
             }
+            KeyCode::Left | KeyCode::Right => {
+                let Some(picker) = self.inline_interactive_state.as_mut() else {
+                    return Ok(false);
+                };
+                if picker.kind != PickerKind::Model {
+                    return Ok(false);
+                }
+                let Some(&idx) = picker.filtered.get(picker.selected) else {
+                    return Ok(true);
+                };
+                let entry = &mut picker.entries[idx];
+                if !entry.option_efforts.iter().any(Option::is_some) || entry.options.is_empty() {
+                    return Ok(true);
+                }
+                entry.selected_option = if matches!(code, KeyCode::Right) {
+                    (entry.selected_option + 1) % entry.options.len()
+                } else if entry.selected_option == 0 {
+                    entry.options.len() - 1
+                } else {
+                    entry.selected_option - 1
+                };
+                Ok(true)
+            }
             KeyCode::Enter => {
                 if let Some(ref mut picker) = self.inline_interactive_state {
                     if picker.filtered.is_empty() {
@@ -2086,13 +2140,11 @@ impl App {
                         return Ok(true);
                     }
                     // `/login` + immediate Enter should not silently launch the
-                    // first provider's login flow. Without a filter or an
-                    // explicit selection there is no clear user choice yet, so
-                    // activate the picker and let them pick deliberately.
-                    if picker.kind == PickerKind::Login
-                        && picker.filter.is_empty()
-                        && picker.selected == 0
-                    {
+                    // first provider's login flow. Likewise, `/language` on the
+                    // current language should reveal the focused chooser rather
+                    // than merely re-applying the existing setting. Once the user
+                    // moves to a different language, Enter applies it directly.
+                    if picker_preview_enter_should_focus(picker) {
                         picker.preview = false;
                         picker.column = 0;
                         self.input.clear();
@@ -3055,14 +3107,15 @@ impl App {
                         return Ok(());
                     }
                     // For model picker in column 0, cycle forward through effort options
-                    if picker.kind == PickerKind::Model && picker.column == 0 {
-                        if let Some(&idx) = picker.filtered.get(picker.selected) {
-                            let entry = &mut picker.entries[idx];
-                            if entry.option_efforts.iter().any(|e| e.is_some()) {
-                                entry.selected_option = (entry.selected_option + 1) % entry.options.len().max(1);
-                                self.sync_model_picker_preview_from_input();
-                                return Ok(());
-                            }
+                    if picker.kind == PickerKind::Model
+                        && picker.column == 0
+                        && let Some(&idx) = picker.filtered.get(picker.selected)
+                    {
+                        let entry = &mut picker.entries[idx];
+                        if entry.option_efforts.iter().any(|e| e.is_some()) {
+                            entry.selected_option =
+                                (entry.selected_option + 1) % entry.options.len().max(1);
+                            return Ok(());
                         }
                     }
                     if picker.column < picker.max_navigable_column()
@@ -3098,18 +3151,18 @@ impl App {
                         return Ok(());
                     }
                     // For model picker in column 0, cycle backward through effort options
-                    if picker.kind == PickerKind::Model && picker.column == 0 {
-                        if let Some(&idx) = picker.filtered.get(picker.selected) {
-                            let entry = &mut picker.entries[idx];
-                            if entry.option_efforts.iter().any(|e| e.is_some()) {
-                                entry.selected_option = if entry.selected_option == 0 {
-                                    entry.options.len().saturating_sub(1)
-                                } else {
-                                    entry.selected_option - 1
-                                };
-                                self.sync_model_picker_preview_from_input();
-                                return Ok(());
-                            }
+                    if picker.kind == PickerKind::Model
+                        && picker.column == 0
+                        && let Some(&idx) = picker.filtered.get(picker.selected)
+                    {
+                        let entry = &mut picker.entries[idx];
+                        if entry.option_efforts.iter().any(|e| e.is_some()) {
+                            entry.selected_option = if entry.selected_option == 0 {
+                                entry.options.len().saturating_sub(1)
+                            } else {
+                                entry.selected_option - 1
+                            };
+                            return Ok(());
                         }
                     }
                     if picker.column > 0 {
@@ -3241,6 +3294,10 @@ impl App {
                         self.inline_interactive_state = None;
                         self.handle_account_picker_selection(selection);
                     }
+                    PickerAction::Language(language) => {
+                        self.inline_interactive_state = None;
+                        super::commands::apply_ui_language(self, language);
+                    }
                     PickerAction::Login(provider) => {
                         self.inline_interactive_state = None;
                         self.start_login_provider(provider);
@@ -3338,7 +3395,10 @@ impl App {
                         // For merged entries (multiple effort levels), use the
                         // per-option effort; otherwise fall back to entry.effort.
                         let effort = if !entry.option_efforts.is_empty() {
-                            entry.option_efforts.get(entry.selected_option).and_then(|e| e.clone())
+                            entry
+                                .option_efforts
+                                .get(entry.selected_option)
+                                .and_then(|e| e.clone())
                         } else {
                             entry.effort.clone()
                         };

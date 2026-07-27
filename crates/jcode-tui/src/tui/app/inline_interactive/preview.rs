@@ -13,6 +13,10 @@ impl App {
         slash_command_preview_filter(input, &["/login"])
     }
 
+    pub(crate) fn language_picker_preview_filter(input: &str) -> Option<String> {
+        slash_command_preview_filter(input, &["/language"])
+    }
+
     fn account_picker_preview_request(&self, input: &str) -> Option<InlinePickerPreviewRequest> {
         let trimmed = input.trim_start();
         let rest = trimmed
@@ -105,6 +109,10 @@ impl App {
                 Self::login_picker_preview_filter(input)
                     .map(|filter| InlinePickerPreviewRequest::Login { filter })
             })
+            .or_else(|| {
+                Self::language_picker_preview_filter(input)
+                    .map(|filter| InlinePickerPreviewRequest::Language { filter })
+            })
             .or_else(|| self.account_picker_preview_request(input))
     }
 
@@ -188,14 +196,12 @@ impl App {
             return true;
         }
         // `/login` + immediate Enter must not silently start the first
-        // provider's login flow. With no filter and no explicit selection,
-        // just focus the picker so the user chooses deliberately.
+        // provider's login flow. `/language` on the current selection likewise
+        // focuses the chooser so the available alternative is visible.
         if self
             .inline_interactive_state
             .as_ref()
-            .map(|picker| {
-                picker.kind == PickerKind::Login && picker.filter.is_empty() && picker.selected == 0
-            })
+            .map(picker_preview_enter_should_focus)
             .unwrap_or(false)
         {
             if let Some(ref mut picker) = self.inline_interactive_state {

@@ -8,6 +8,9 @@ pub(super) enum InlinePickerPreviewRequest {
     Login {
         filter: String,
     },
+    Language {
+        filter: String,
+    },
     Account {
         provider_filter: Option<String>,
         filter: String,
@@ -19,15 +22,17 @@ impl InlinePickerPreviewRequest {
         match self {
             Self::Model { .. } => PickerKind::Model,
             Self::Login { .. } => PickerKind::Login,
+            Self::Language { .. } => PickerKind::Language,
             Self::Account { .. } => PickerKind::Account,
         }
     }
 
     pub(super) fn filter(&self) -> &str {
         match self {
-            Self::Model { filter } | Self::Login { filter } | Self::Account { filter, .. } => {
-                filter
-            }
+            Self::Model { filter }
+            | Self::Login { filter }
+            | Self::Language { filter }
+            | Self::Account { filter, .. } => filter,
         }
     }
 
@@ -45,6 +50,7 @@ impl InlinePickerPreviewRequest {
         match self {
             Self::Model { .. } => app.open_model_picker(),
             Self::Login { .. } => app.open_login_picker_inline(),
+            Self::Language { .. } => app.open_language_picker_inline(),
             Self::Account {
                 provider_filter, ..
             } => app.open_account_picker(provider_filter.as_deref()),
@@ -84,6 +90,7 @@ pub(super) fn picker_account_provider_scope(picker: &InlineInteractiveState) -> 
             provider_filter: None,
         })
         | PickerAction::Model
+        | PickerAction::Language(_)
         | PickerAction::Login(_)
         | PickerAction::Logout(_)
         | PickerAction::LogoutAll

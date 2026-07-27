@@ -530,7 +530,7 @@ fn test_copy_selection_mouse_click_does_not_enter_mode() {
 }
 
 #[test]
-fn test_copy_selection_mouse_drag_auto_copies_and_exits_mode() {
+fn test_copy_selection_mouse_drag_requires_explicit_copy() {
     let _render_lock = scroll_render_test_lock();
     let (mut app, mut terminal) = create_copy_test_app();
     let copied = std::sync::Arc::new(std::sync::Mutex::new(String::new()));
@@ -606,17 +606,24 @@ fn test_copy_selection_mouse_drag_auto_copies_and_exits_mode() {
             row: end_row,
             modifiers: KeyModifiers::empty(),
         },
-        |text| {
-            *copied_for_closure.lock().unwrap() = text.to_string();
-            true
-        },
+        |_| panic!("mouse release must not write the clipboard"),
     );
 
-    assert!(!app.copy_selection_mode);
-    assert!(app.copy_selection_anchor.is_none());
-    assert!(app.copy_selection_cursor.is_none());
+    assert!(app.copy_selection_mode);
+    assert!(app.copy_selection_anchor.is_some());
+    assert!(app.copy_selection_cursor.is_some());
+    assert!(copied.lock().unwrap().is_empty());
+    assert_eq!(
+        app.status_notice(),
+        Some("Selection ready · Enter/Y/C to copy · Esc to cancel".to_string())
+    );
+
+    assert!(app.copy_current_selection_to_clipboard_with(|text| {
+        *copied_for_closure.lock().unwrap() = text.to_string();
+        true
+    }));
     assert!(copied.lock().unwrap().contains("println!(\"hello\");"));
-    assert_eq!(app.status_notice(), Some("Copied selection".to_string()));
+    assert!(!app.copy_selection_mode);
 }
 
 #[test]
@@ -713,13 +720,15 @@ fn test_side_panel_mouse_drag_extracts_expected_text() {
             row,
             modifiers: KeyModifiers::empty(),
         },
-        |text| {
-            *copied_for_closure.lock().unwrap() = text.to_string();
-            true
-        },
+        |_| panic!("mouse release must not write the clipboard"),
     );
+    assert!(copied.lock().unwrap().is_empty());
+    assert!(app.copy_selection_mode);
+    assert!(app.copy_current_selection_to_clipboard_with(|text| {
+        *copied_for_closure.lock().unwrap() = text.to_string();
+        true
+    }));
     assert!(copied.lock().unwrap().contains("beta highlight target"));
-    assert!(!app.copy_selection_mode);
 }
 
 #[test]
@@ -1349,7 +1358,7 @@ fn test_changelog_overlay_supports_drag_select_and_copy() {
 }
 
 #[test]
-fn test_changelog_overlay_mouse_drag_release_copies_text() {
+fn test_changelog_overlay_mouse_drag_release_requires_explicit_copy() {
     let _render_lock = scroll_render_test_lock();
     let mut app = create_test_app();
     app.changelog_scroll = Some(0);
@@ -1385,7 +1394,8 @@ fn test_changelog_overlay_mouse_drag_release_copies_text() {
     }
     let row = found_row.expect("expected a screen row mapping to the changelog line");
 
-    // Press, drag across the line, and release: this should select and attempt a copy.
+    // Press, drag across the line, and release: this should select without
+    // touching the system clipboard.
     app.handle_mouse_event(MouseEvent {
         kind: MouseEventKind::Down(MouseButton::Left),
         column: 2,
@@ -1405,11 +1415,17 @@ fn test_changelog_overlay_mouse_drag_release_copies_text() {
         modifiers: KeyModifiers::empty(),
     });
 
-    // A copy was attempted (success/failure depends on clipboard availability
-    // in the test environment, but the selection path must have run).
-    assert!(matches!(
+    assert!(app.copy_selection_mode);
+    assert_eq!(
         app.status_notice().as_deref(),
-        Some("Copied selection") | Some("Failed to copy selection") | Some("Selection is empty")
-    ));
-}
+        Some("Selection ready · Enter/Y/C to copy · Esc to cancel")
+    );
 
+    let copied = std::sync::Arc::new(std::sync::Mutex::new(String::new()));
+    let copied_for_closure = copied.clone();
+    assert!(app.copy_current_selection_to_clipboard_with(|text| {
+        *copied_for_closure.lock().unwrap() = text.to_string();
+        true
+    }));
+    assert!(!copied.lock().unwrap().is_empty());
+}

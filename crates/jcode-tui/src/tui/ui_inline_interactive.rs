@@ -56,16 +56,15 @@ fn picker_entry_display_name(entry: &crate::tui::PickerEntry) -> String {
     let base = picker_entry_pretty_name(entry);
     // For merged entries with multiple effort levels, show the current effort
     // as a suffix so the user can see which level is selected.
-    let effort_suffix = if !entry.option_efforts.is_empty() {
-        if let Some(Some(effort)) = entry.option_efforts.get(entry.selected_option) {
-            let label = crate::tui::i18n::effort_label(effort);
-            format!(" ({})", label)
-        } else {
-            String::new()
-        }
-    } else {
-        String::new()
-    };
+    let selected_effort = entry
+        .option_efforts
+        .get(entry.selected_option)
+        .and_then(|effort| effort.as_deref())
+        .or(entry.effort.as_deref());
+    let effort_suffix = selected_effort
+        .map(crate::tui::i18n::effort_label)
+        .map(|label| format!(" ({label})"))
+        .unwrap_or_default();
     let default_marker = if entry.is_default { " default" } else { "" };
     let is_new = entry
         .options
@@ -103,7 +102,8 @@ fn picker_entry_display_name(entry: &crate::tui::PickerEntry) -> String {
 /// names every other surface uses (header, status line, info widgets). We
 /// prettify only the well-known families so unfamiliar or namespaced ids
 /// (OpenRouter `vendor/model`, local profiles) keep their exact spelling and
-/// stay copy-pasteable. Effort suffixes such as ` (high)` are preserved.
+/// stay copy-pasteable. Recognized legacy effort suffixes are stripped from the
+/// raw name and rendered from the currently selected effort option instead.
 fn picker_entry_pretty_name(entry: &crate::tui::PickerEntry) -> String {
     if !matches!(
         entry.action,
@@ -111,16 +111,17 @@ fn picker_entry_pretty_name(entry: &crate::tui::PickerEntry) -> String {
     ) {
         return entry.name.clone();
     }
-    let (base, suffix) = match entry.effort.as_deref() {
-        Some(_) => match entry.name.rsplit_once(" (") {
-            Some((base, rest)) => (base, format!(" ({rest}")),
-            None => (entry.name.as_str(), String::new()),
-        },
-        None => (entry.name.as_str(), String::new()),
-    };
+    let trimmed = entry.name.trim();
+    let base = trimmed
+        .strip_suffix(')')
+        .and_then(|without_close| without_close.rsplit_once('('))
+        .and_then(|(base, effort)| {
+            jcode_provider_core::canonical_reasoning_effort(effort.trim()).map(|_| base.trim_end())
+        })
+        .unwrap_or(trimmed);
     match crate::tui::app::helpers::model_names::pretty_known_model_family(base) {
-        Some(pretty) => format!("{pretty}{suffix}"),
-        None => entry.name.clone(),
+        Some(pretty) => pretty,
+        None => base.to_string(),
     }
 }
 
@@ -259,7 +260,7 @@ fn account_picker_entry_title(
 }
 
 fn account_inline_interactive_state_label(entry: &crate::tui::PickerEntry) -> &'static str {
-    entry.account_state_label().unwrap_or("-")
+    entry.compact_state_label().unwrap_or("-")
 }
 
 fn picker_render_width(picker: &crate::tui::InlineInteractiveState, max_width: usize) -> usize {
@@ -1213,6 +1214,23 @@ mod tests {
 
         entry.name = "gpt-5.5 (high)".to_string();
         entry.effort = Some("high".to_string());
+        assert_eq!(picker_entry_display_name(entry), "GPT-5.5 (high)");
+    }
+
+    #[test]
+    fn picker_entry_display_name_tracks_selected_effort_option() {
+        let mut picker = sample_picker();
+        let entry = &mut picker.entries[0];
+        entry.recommended = false;
+        entry.is_current = false;
+        entry.name = "gpt-5.5 (high)".to_string();
+        entry.options.push(entry.options[0].clone());
+        entry.option_efforts = vec![Some("low".to_string()), Some("high".to_string())];
+
+        entry.selected_option = 0;
+        assert_eq!(picker_entry_display_name(entry), "GPT-5.5 (low)");
+
+        entry.selected_option = 1;
         assert_eq!(picker_entry_display_name(entry), "GPT-5.5 (high)");
     }
 

@@ -9,6 +9,52 @@ use crate::tui::{
 };
 
 impl App {
+    pub(crate) fn open_language_picker_inline(&mut self) {
+        let current = crate::tui::i18n::current_language();
+        let choices = [
+            ("English", "en", crate::tui::i18n::Language::En),
+            ("中文（简体）", "zh", crate::tui::i18n::Language::Zh),
+        ];
+        let entries = choices
+            .into_iter()
+            .map(|(name, code, language)| PickerEntry {
+                name: name.to_string(),
+                options: vec![PickerOption {
+                    provider: code.to_string(),
+                    api_method: String::new(),
+                    available: true,
+                    detail: String::new(),
+                    estimated_reference_cost_micros: None,
+                }],
+                action: PickerAction::Language(language),
+                selected_option: 0,
+                is_current: language == current,
+                is_default: false,
+                is_favorite: false,
+                recommended: false,
+                recommendation_rank: usize::MAX,
+                usage_score: 0,
+                old: false,
+                created_date: None,
+                effort: None,
+                option_efforts: vec![],
+            })
+            .collect::<Vec<_>>();
+        let selected = entries
+            .iter()
+            .position(|entry| entry.is_current)
+            .unwrap_or(0);
+        self.inline_interactive_state = Some(InlineInteractiveState {
+            kind: PickerKind::Language,
+            filtered: (0..entries.len()).collect(),
+            entries,
+            selected,
+            column: 0,
+            filter: String::new(),
+            preview: false,
+        });
+    }
+
     pub(crate) fn open_agents_picker(&mut self) {
         let models = [
             AgentModelTarget::Swarm,
@@ -47,7 +93,7 @@ impl App {
                 old: false,
                 created_date: None,
                 effort: None,
-            option_efforts: vec![],
+                option_efforts: vec![],
             }
         })
         .collect();
@@ -129,7 +175,7 @@ impl App {
                     old: false,
                     created_date: None,
                     effort: None,
-            option_efforts: vec![],
+                    option_efforts: vec![],
                 }
             })
             .collect::<Vec<_>>();
@@ -158,7 +204,7 @@ impl App {
                     old: false,
                     created_date: None,
                     effort: None,
-            option_efforts: vec![],
+                    option_efforts: vec![],
                 },
             );
         }
@@ -244,7 +290,7 @@ impl App {
                             old: false,
                             created_date: None,
                             effort: None,
-            option_efforts: vec![],
+                            option_efforts: vec![],
                         },
                     );
                 }
@@ -275,7 +321,7 @@ impl App {
                     old: false,
                     created_date: None,
                     effort: None,
-            option_efforts: vec![],
+                    option_efforts: vec![],
                 },
             );
 

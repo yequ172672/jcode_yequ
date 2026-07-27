@@ -539,7 +539,7 @@ impl App {
                 old: false,
                 created_date: None,
                 effort: None,
-            option_efforts: vec![],
+                option_efforts: vec![],
             });
         }
 
@@ -589,7 +589,7 @@ impl App {
                 old: false,
                 created_date: None,
                 effort: None,
-            option_efforts: vec![],
+                option_efforts: vec![],
             });
         }
 
@@ -804,7 +804,7 @@ impl App {
                 old: false,
                 created_date: None,
                 effort: None,
-            option_efforts: vec![],
+                option_efforts: vec![],
             });
         }
 
@@ -958,7 +958,7 @@ impl App {
                 old: false,
                 created_date: None,
                 effort: None,
-            option_efforts: vec![],
+                option_efforts: vec![],
             });
         }
 

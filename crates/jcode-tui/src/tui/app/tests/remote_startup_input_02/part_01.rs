@@ -1766,20 +1766,41 @@ fn test_model_picker_effort_variants_follow_each_route_vocabulary() {
         detail: String::new(),
         cheapness: None,
     });
+    app.remote_model_options.push(crate::provider::ModelRoute {
+        model: "gpt-5.5(high)".to_string(),
+        provider: "OpenAI".to_string(),
+        api_method: "openai-oauth".to_string(),
+        available: true,
+        detail: String::new(),
+        cheapness: None,
+    });
 
     app.open_model_picker();
     let picker = app
         .inline_interactive_state
         .as_ref()
         .expect("model picker should be open");
-    // With per-route merging, gpt-5.5 has multiple entries (one per route).
-    // Check across all gpt-5.5 entries for effort/route combinations.
+    // One row is retained per concrete provider source. Duplicate OpenAI OAuth
+    // rows and legacy names such as `gpt-5.5(high)` collapse together, while
+    // OpenRouter keeps its distinct route and effort vocabulary.
     let gpt_entries: Vec<_> = picker
         .entries
         .iter()
         .filter(|entry| entry.name == "gpt-5.5")
         .collect();
     assert!(!gpt_entries.is_empty(), "gpt-5.5 should be in picker");
+    assert_eq!(
+        gpt_entries.len(),
+        2,
+        "gpt-5.5 should have one OpenAI row and one OpenRouter row"
+    );
+    assert!(
+        picker
+            .entries
+            .iter()
+            .all(|entry| entry.name != "gpt-5.5(high)"),
+        "legacy effort suffixes must not leak into model row names"
+    );
     let has_effort = |effort: &str| {
         gpt_entries.iter().any(|entry| {
             entry.option_efforts.iter().any(|e| e.as_deref() == Some(effort))

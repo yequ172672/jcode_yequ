@@ -823,6 +823,7 @@ pub(crate) fn detect_kv_cache_problem(
 pub enum PickerKind {
     Model,
     Account,
+    Language,
     Login,
     Usage,
 }
@@ -1008,6 +1009,17 @@ impl PickerKind {
                 shows_default_shortcut_hint: false,
                 preview_activation_column: 0,
             },
+            Self::Language => InlineInteractiveSchema {
+                layout: InlineInteractiveLayout::Compact,
+                primary_label: crate::tui::i18n::if_zh("语言", "LANGUAGE"),
+                secondary_label: crate::tui::i18n::if_zh("状态", "STATE"),
+                secondary_preview_label: crate::tui::i18n::if_zh("状态", "STATE"),
+                tertiary_label: "",
+                preview_submit_hint: crate::tui::i18n::if_zh("  ↵ 选择", "  ↵ select"),
+                active_submit_hint: crate::tui::i18n::if_zh("  ↑↓/jk ↵ 退出", "  ↑↓/jk ↵ Esc"),
+                shows_default_shortcut_hint: false,
+                preview_activation_column: 0,
+            },
             Self::Login => InlineInteractiveSchema {
                 layout: InlineInteractiveLayout::ThreeColumn,
                 primary_label: "ITEM",
@@ -1044,8 +1056,15 @@ impl PickerKind {
                     .active_option()
                     .map(|option| option.provider.as_str())
                     .unwrap_or("");
-                let state = entry.account_state_label().unwrap_or("");
+                let state = entry.compact_state_label().unwrap_or("");
                 format!("{} {} {}", entry.name, provider, state)
+            }
+            Self::Language => {
+                let code = entry
+                    .active_option()
+                    .map(|option| option.provider.as_str())
+                    .unwrap_or("");
+                format!("{} {}", entry.name, code)
             }
             Self::Login => {
                 let auth_kind = entry
@@ -1117,6 +1136,7 @@ pub enum AgentModelTarget {
 pub enum PickerAction {
     Model,
     Account(AccountPickerAction),
+    Language(crate::tui::i18n::Language),
     Login(crate::provider_catalog::LoginProviderDescriptor),
     Logout(crate::provider_catalog::LoginProviderDescriptor),
     LogoutAll,
@@ -1172,6 +1192,7 @@ impl InlineInteractiveState {
 fn estimate_picker_action_bytes(action: &PickerAction) -> usize {
     match action {
         PickerAction::Model
+        | PickerAction::Language(_)
         | PickerAction::AgentTarget(_)
         | PickerAction::AgentModelChoice { .. }
         | PickerAction::LogoutAll => 0,
@@ -1410,7 +1431,7 @@ impl PickerEntry {
         self.options.len()
     }
 
-    pub fn account_state_label(&self) -> Option<&'static str> {
+    pub fn compact_state_label(&self) -> Option<&'static str> {
         match &self.action {
             PickerAction::Account(AccountPickerAction::Switch { .. }) => {
                 Some(if self.is_current { "active" } else { "saved" })
@@ -1418,6 +1439,11 @@ impl PickerEntry {
             PickerAction::Account(AccountPickerAction::Add { .. }) => Some("add"),
             PickerAction::Account(AccountPickerAction::Replace { .. }) => Some("replace"),
             PickerAction::Account(AccountPickerAction::OpenCenter { .. }) => Some("manage"),
+            PickerAction::Language(_) => Some(if self.is_current {
+                crate::tui::i18n::if_zh("当前", "current")
+            } else {
+                ""
+            }),
             _ => None,
         }
     }

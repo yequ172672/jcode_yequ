@@ -481,7 +481,7 @@ impl App {
     pub(super) fn handle_copy_selection_mouse_with<F>(
         &mut self,
         mouse: MouseEvent,
-        copy_text: F,
+        _copy_text: F,
     ) -> Option<bool>
     where
         F: FnOnce(&str) -> bool,
@@ -586,9 +586,11 @@ impl App {
                 if self.copy_selection_mode {
                     return Some(false);
                 }
-                if !self.copy_current_selection_to_clipboard_with(copy_text) {
-                    self.exit_copy_selection_mode();
-                }
+                // A mouse drag selects text but must not silently replace the
+                // user's system clipboard. Keep the selection active and require
+                // an explicit Enter/Y/C (or Ctrl+C) before writing the clipboard.
+                self.enter_copy_selection_mode();
+                self.set_status_notice("Selection ready · Enter/Y/C to copy · Esc to cancel");
                 Some(false)
             }
             MouseEventKind::ScrollUp => {

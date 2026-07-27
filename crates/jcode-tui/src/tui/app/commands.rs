@@ -1298,9 +1298,39 @@ fn disconnect_ssh_remote(app: &mut App, name: &str) {
 
 /// `/language` — show or switch the UI language.
 ///
-/// /language        — show current language
+/// /language        — open the language picker
 /// /language en     — switch to English
 /// /language zh     — switch to Chinese
+pub(super) fn apply_ui_language(app: &mut App, language: crate::tui::i18n::Language) {
+    let mut cfg = crate::config::Config::load();
+    cfg.display.language = Some(
+        match language {
+            crate::tui::i18n::Language::En => "en",
+            crate::tui::i18n::Language::Zh => "zh",
+        }
+        .to_string(),
+    );
+    if let Err(error) = cfg.save() {
+        app.push_display_message(DisplayMessage::error(format!(
+            "Failed to save language setting: {error}"
+        )));
+        return;
+    }
+    crate::config::Config::invalidate_cache();
+    match language {
+        crate::tui::i18n::Language::Zh => {
+            app.push_display_message(DisplayMessage::system("语言已切换为中文。".to_string()));
+            app.set_status_notice("语言：中文");
+        }
+        crate::tui::i18n::Language::En => {
+            app.push_display_message(DisplayMessage::system(
+                "Language switched to English.".to_string(),
+            ));
+            app.set_status_notice("Language: English");
+        }
+    }
+}
+
 pub(super) fn handle_language_command(app: &mut App, trimmed: &str) -> bool {
     let trimmed = trimmed.trim();
     if !trimmed.starts_with("/language") {
@@ -1312,50 +1342,18 @@ pub(super) fn handle_language_command(app: &mut App, trimmed: &str) -> bool {
 
     match lang {
         Some("zh") | Some("chinese") => {
-            let mut cfg = crate::config::Config::load();
-            cfg.display.language = Some("zh".to_string());
-            if let Err(e) = cfg.save() {
-                app.push_display_message(DisplayMessage::system(format!(
-                    "Failed to save language setting: {}",
-                    e
-                )));
-                return true;
-            }
-            crate::config::Config::invalidate_cache();
-            app.push_display_message(DisplayMessage::system(
-                "语言已切换为中文。".to_string(),
-            ));
-            app.set_status_notice("语言: 中文");
+            apply_ui_language(app, crate::tui::i18n::Language::Zh);
         }
         Some("en") | Some("english") => {
-            let mut cfg = crate::config::Config::load();
-            cfg.display.language = Some("en".to_string());
-            if let Err(e) = cfg.save() {
-                app.push_display_message(DisplayMessage::system(format!(
-                    "Failed to save language setting: {}",
-                    e
-                )));
-                return true;
-            }
-            crate::config::Config::invalidate_cache();
-            app.push_display_message(DisplayMessage::system(
-                "Language switched to English.".to_string(),
-            ));
-            app.set_status_notice("Language: English");
+            apply_ui_language(app, crate::tui::i18n::Language::En);
         }
         Some(_) => {
             app.push_display_message(DisplayMessage::system(
-                "Usage: /language [en|zh]\n  /language    - show current language\n  /language en - switch to English\n  /language zh - 切换到中文".to_string(),
+                "Usage: /language [en|zh]\n  /language    - open the language picker\n  /language en - switch to English\n  /language zh - 切换到中文".to_string(),
             ));
         }
         None => {
-            let current = crate::tui::i18n::current_language();
-            let msg = match current {
-                crate::tui::i18n::Language::Zh => "当前语言：中文".to_string(),
-                crate::tui::i18n::Language::En => "Current language: English".to_string(),
-            };
-            app.push_display_message(DisplayMessage::system(msg));
-            app.set_status_notice("Language: English");
+            app.open_language_picker_inline();
         }
     }
     true

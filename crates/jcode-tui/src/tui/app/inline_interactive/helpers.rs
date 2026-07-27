@@ -103,13 +103,29 @@ pub(super) fn save_agent_model_override(
     cfg.save()
 }
 
+pub(super) fn split_model_effort_suffix(name: &str) -> (&str, Option<&'static str>) {
+    let trimmed = name.trim();
+    let Some(without_close) = trimmed.strip_suffix(')') else {
+        return (trimmed, None);
+    };
+    let Some((base, raw_effort)) = without_close.rsplit_once('(') else {
+        return (trimmed, None);
+    };
+    let Some(effort) = jcode_provider_core::canonical_reasoning_effort(raw_effort.trim()) else {
+        return (trimmed, None);
+    };
+    let base = base.trim_end();
+    if base.is_empty() {
+        (trimmed, None)
+    } else {
+        (base, Some(effort))
+    }
+}
+
 pub(super) fn model_entry_base_name(entry: &PickerEntry) -> String {
-    if entry.effort.is_some() {
-        entry
-            .name
-            .rsplit_once(" (")
-            .map(|(base, _)| base.to_string())
-            .unwrap_or_else(|| entry.name.clone())
+    let (base, suffix_effort) = split_model_effort_suffix(&entry.name);
+    if entry.effort.is_some() || !entry.option_efforts.is_empty() || suffix_effort.is_some() {
+        base.to_string()
     } else {
         entry.name.clone()
     }

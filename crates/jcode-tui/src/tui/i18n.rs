@@ -24,7 +24,11 @@ pub fn current_language() -> Language {
 /// Return `zh` when the current language is Chinese, `en` otherwise.
 /// Convenience for inline ternaries.
 pub fn if_zh(zh: &'static str, en: &'static str) -> &'static str {
-    if current_language() == Language::Zh { zh } else { en }
+    if current_language() == Language::Zh {
+        zh
+    } else {
+        en
+    }
 }
 
 /// Translate a PickerKind schema label.
@@ -50,6 +54,7 @@ pub fn effort_label(effort: &str) -> &'static str {
     match current_language() {
         Language::Zh => match effort {
             "none" => "无",
+            "minimal" => "最小",
             "low" => "低",
             "medium" | "med" => "中",
             "high" => "高",
@@ -59,6 +64,7 @@ pub fn effort_label(effort: &str) -> &'static str {
         },
         Language::En => match effort {
             "none" => "none",
+            "minimal" => "minimal",
             "low" => "low",
             "medium" | "med" => "med",
             "high" => "high",
@@ -66,19 +72,6 @@ pub fn effort_label(effort: &str) -> &'static str {
             "max" => "max",
             _ => "?",
         },
-    }
-}
-
-/// Chinese labels for reasoning effort levels (legacy, always Chinese).
-pub fn effort_label_zh(effort: &str) -> &'static str {
-    match effort {
-        "none" => "无",
-        "low" => "低",
-        "medium" | "med" => "中",
-        "high" => "高",
-        "xhigh" => "极高",
-        "max" => "最大",
-        _ => "?",
     }
 }
 
