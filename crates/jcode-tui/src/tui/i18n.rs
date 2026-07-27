@@ -534,3 +534,80 @@ pub fn onboarding_press_number(count: usize) -> String {
     }
 }
 
+// -- Help overlay: section headers --
+pub fn help_section_session() -> &'static str { if_zh("  会话", "  Session") }
+pub fn help_section_memory_swarm() -> &'static str { if_zh("  记忆 & Swarm", "  Memory & Swarm") }
+pub fn help_section_auth_accounts() -> &'static str { if_zh("  认证 & 账户", "  Auth & Accounts") }
+pub fn help_section_system() -> &'static str { if_zh("  系统", "  System") }
+pub fn help_section_navigation() -> &'static str { if_zh("  导航", "  Navigation") }
+pub fn help_section_input_editing() -> &'static str { if_zh("  输入 & 编辑", "  Input & Editing") }
+pub fn help_section_model_status() -> &'static str { if_zh("  模型状态", "  Model Status") }
+
+// -- Help overlay: key entry descriptions --
+pub fn help_key_scroll_history() -> &'static str { if_zh("滚动历史", "Scroll history") }
+pub fn help_key_scroll_input() -> &'static str { if_zh("滚动为空时）", "Scroll history (when input empty)") }
+pub fn help_key_resize_panel_25() -> &'static str { if_zh("调整侧面板大小至 25/50/75/100%", "Resize side panel to 25/50/75/100%") }
+pub fn help_key_toggle_diagram() -> &'static str { if_zh("切换图表位置（侧边/顶部）", "Toggle diagram position (side/top)") }
+pub fn help_key_focus_chat() -> &'static str { if_zh("聚焦聊天 / 图表 / 差异", "Focus chat / diagram / diffs") }
+pub fn help_key_pan_diagram() -> &'static str { if_zh("平移图表（聚焦时）", "Pan diagram (when focused)") }
+pub fn help_key_zoom_diagram() -> &'static str { if_zh("缩放图表（聚焦时）", "Zoom diagram (when focused)") }
+pub fn help_key_resize_diagram() -> &'static str { if_zh("调整图表面板大小", "Resize diagram pane") }
+pub fn help_key_cycle_favorites() -> &'static str { if_zh("循环切换收藏模型", "Cycle favorited models") }
+pub fn help_key_set_default() -> &'static str { if_zh("设置默认模型（在 /model 选择器中）", "Set default model (in /model picker)") }
+pub fn help_key_cut_line() -> &'static str { if_zh("剪切整行输入到剪贴板", "Cut entire input line to clipboard") }
+pub fn help_key_clear_input() -> &'static str { if_zh("清空输入行", "Clear input line") }
+pub fn help_key_delete_to_end() -> &'static str { if_zh("删除到输入末尾", "Delete to end of input") }
+pub fn help_key_home_end() -> &'static str { if_zh("移动到输入开头 / 末尾", "Move to start / end of input") }
+pub fn help_key_undo_edit() -> &'static str { if_zh("撤销输入编辑", "Undo input edit") }
+pub fn help_key_cut_paste() -> &'static str { if_zh("剪切输入 / 粘贴剪贴板", "Cut input / paste clipboard") }
+pub fn help_key_stash_pop() -> &'static str { if_zh("暂存 / 弹出输入（保存以便后用）", "Stash / pop input (save for later)") }
+pub fn help_key_delete_word() -> &'static str { if_zh("删除输入中前一个单词", "Delete previous word in input") }
+pub fn help_key_move_word_lr() -> &'static str { if_zh("按词左右移动", "Move by word left / right") }
+pub fn help_key_retrieve_pending() -> &'static str { if_zh("检索待发送消息以供编辑", "Retrieve pending message for editing") }
+pub fn help_key_toggle_queue() -> &'static str { if_zh("切换队列模式", "Toggle queue mode") }
+pub fn help_key_recover_tools() -> &'static str { if_zh("恢复缺失的工具输出", "Recover from missing tool outputs") }
+pub fn help_key_toggle_chat_select() -> &'static str { if_zh("切换聊天选择/复制模式", "Toggle chat selection/copy mode") }
+pub fn help_key_toggle_scroll_lock() -> &'static str { if_zh("切换输入滚动锁", "Toggle typing scroll lock") }
+pub fn help_key_toggle_auto_poke() -> &'static str { if_zh("切换未完成待办的自动提醒", "Toggle auto-poke for incomplete todos") }
+pub fn help_key_toggle_todo_card() -> &'static str { if_zh("显示/隐藏聊天中的待办卡片", "Show/dismiss todo list card in chat") }
+
+// -- Remaining help entries --
+pub fn help_entry_auth() -> &'static str { if_zh("显示认证状态", "Show authentication status") }
+
+// -- Onboarding (remaining) --
+pub fn onboarding_welcome_title() -> &'static str { if_zh("欢迎使用 jcode 引导", "Welcome to jcode onboarding") }
+pub fn onboarding_keyboard_hint() -> &'static str { if_zh("使用键盘导航。", "Use your keyboard to navigate.") }
+pub fn onboarding_importing() -> &'static str { if_zh("正在导入您的登录…", "Importing your logins…") }
+pub fn onboarding_wait_moment() -> &'static str { if_zh("请稍候，只需片刻。", "Hang tight, this only takes a moment.") }
+pub fn onboarding_import_failed() -> &'static str { if_zh("无法导入那些登录。", "We couldn't import those logins.") }
+pub fn onboarding_no_problem() -> &'static str { if_zh("没问题 - 您可以直接登录。", "No problem - you can log in directly.") }
+pub fn onboarding_first_login() -> &'static str { if_zh("请先登录以开始。", "First, log in to get started.") }
+pub fn onboarding_found_logins(found: usize) -> String {
+    match current_language() {
+        Language::Zh => format!("找到 {} 个现有登录：", found),
+        Language::En => format!("We found {} existing login{}:", found, if found == 1 { "" } else { "s" }),
+    }
+}
+pub fn onboarding_import_label() -> &'static str { if_zh("Import：", "Import:") }
+pub fn onboarding_login_provider(provider: &str) -> String {
+    match current_language() {
+        Language::Zh => format!("Login to {}?", provider),
+        Language::En => format!("Log in to {}?", provider),
+    }
+}
+pub fn onboarding_resume_continue(cli_label: &str) -> String {
+    match current_language() {
+        Language::Zh => format!("Continue in {}?", cli_label),
+        Language::En => format!("Continue where you left off in {}?", cli_label),
+    }
+}
+pub fn onboarding_auto_resume(seconds_left: u64, cli_label: &str) -> String {
+    match current_language() {
+        Language::Zh => format!("{sec}秒后自动打开{label}...", sec=seconds_left, label=cli_label),
+        Language::En => format!("Opens the resume menu automatically in {}s...", seconds_left),
+    }
+}
+
+
+
+

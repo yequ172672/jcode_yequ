@@ -7,7 +7,7 @@
 //! Layout, top to bottom, vertically centered in the chat area:
 //!   1. Grayed telemetry notice header.
 //!   2. The animated donut (attention grab).
-//!   3. "Welcome to jcode onboarding" title.
+//!   3. crate::tui::i18n::onboarding_welcome_title() title.
 //!   4. The login / getting-started prompt with suggestions.
 //!
 //! The donut is drawn as a live widget (not part of the cached transcript) so
@@ -153,12 +153,12 @@ fn import_summary_pills_line(
     spans.extend(lozenge_pill_spans(crate::tui::i18n::onboarding_continue(), focused == Pill::Continue));
     spans.push(Span::raw("   "));
     spans.extend(lozenge_pill_spans(
-        "Import less",
+        crate::tui::i18n::onboarding_import_less(),
         focused == Pill::ImportLess,
     ));
     spans.push(Span::raw("   "));
     spans.extend(lozenge_pill_spans(
-        "Telemetry settings",
+        crate::tui::i18n::onboarding_telemetry_settings(),
         focused == Pill::Telemetry,
     ));
     Line::from(spans).alignment(align)
@@ -385,7 +385,7 @@ fn telemetry_header_lines(width: u16) -> Vec<Line<'static>> {
 /// Welcome title line, rendered just above the donut.
 fn welcome_title_line() -> Line<'static> {
     Line::from(Span::styled(
-        "Welcome to jcode onboarding",
+        crate::tui::i18n::onboarding_welcome_title(),
         Style::default()
             .fg(welcome_accent())
             .add_modifier(Modifier::BOLD),
@@ -398,7 +398,7 @@ fn welcome_title_line() -> Line<'static> {
 /// what is selectable, so a one-liner is enough.
 fn keyboard_hint_line() -> Line<'static> {
     Line::from(Span::styled(
-        "Use your keyboard to navigate.",
+        crate::tui::i18n::onboarding_keyboard_hint(),
         Style::default().fg(dim_color()),
     ))
     .alignment(Alignment::Center)
@@ -426,7 +426,7 @@ fn welcome_body_lines(app: &dyn TuiState) -> Vec<Line<'static>> {
                     // the user to "log in again" right after they chose to import.
                     lines.push(
                         Line::from(Span::styled(
-                            "Importing your logins…",
+                            crate::tui::i18n::onboarding_importing(),
                             Style::default()
                                 .fg(welcome_accent())
                                 .add_modifier(Modifier::BOLD),
@@ -435,7 +435,7 @@ fn welcome_body_lines(app: &dyn TuiState) -> Vec<Line<'static>> {
                     );
                     lines.push(
                         Line::from(Span::styled(
-                            "Hang tight, this only takes a moment.",
+                            crate::tui::i18n::onboarding_wait_moment(),
                             Style::default().fg(dim_color()),
                         ))
                         .alignment(align),
@@ -447,7 +447,7 @@ fn welcome_body_lines(app: &dyn TuiState) -> Vec<Line<'static>> {
                     let reason = error.unwrap_or_default();
                     lines.push(
                         Line::from(Span::styled(
-                            "We couldn't import those logins.",
+                            crate::tui::i18n::onboarding_import_failed(),
                             Style::default()
                                 .fg(rgb(240, 180, 120))
                                 .add_modifier(Modifier::BOLD),
@@ -463,7 +463,7 @@ fn welcome_body_lines(app: &dyn TuiState) -> Vec<Line<'static>> {
                     lines.push(Line::from(""));
                     lines.push(
                         Line::from(Span::styled(
-                            "No problem - you can log in directly.",
+                            crate::tui::i18n::onboarding_no_problem(),
                             Style::default()
                                 .fg(welcome_accent())
                                 .add_modifier(Modifier::BOLD),
@@ -493,7 +493,7 @@ fn welcome_body_lines(app: &dyn TuiState) -> Vec<Line<'static>> {
                 None => {
                     lines.push(
                         Line::from(Span::styled(
-                            "First, log in to get started.",
+                            crate::tui::i18n::onboarding_first_login(),
                             Style::default()
                                 .fg(welcome_accent())
                                 .add_modifier(Modifier::BOLD),
@@ -543,13 +543,13 @@ fn welcome_body_lines(app: &dyn TuiState) -> Vec<Line<'static>> {
                     lines.push(import_summary_pills_line(prompt.summary_pill, align));
                 }
                 Some(prompt) => {
-                    // Choose mode: a short "Import:" label, the Continue pill,
+                    // Choose mode: a short crate::tui::i18n::onboarding_import_label() label, the Continue pill,
                     // then the per-login rows. The interactive pill + rows show
                     // what is selectable, so we drop the old instruction prose
                     // and countdown sentence to keep the screen uncluttered.
                     lines.push(
                         Line::from(Span::styled(
-                            "Import:",
+                            crate::tui::i18n::onboarding_import_label(),
                             Style::default()
                                 .fg(welcome_accent())
                                 .add_modifier(Modifier::BOLD),
@@ -614,7 +614,7 @@ fn welcome_body_lines(app: &dyn TuiState) -> Vec<Line<'static>> {
             lines.push(Line::from(""));
             lines.push(
                 Line::from(Span::styled(
-                    format!("Opens the resume menu automatically in {seconds_left}s…"),
+                    crate::tui::i18n::onboarding_auto_resume(seconds_left, &cli_label),
                     Style::default().fg(dim_color()),
                 ))
                 .alignment(align),
