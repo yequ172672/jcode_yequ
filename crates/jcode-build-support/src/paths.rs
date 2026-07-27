@@ -182,8 +182,11 @@ pub fn selfdev_build_command_for_target(
             vec![("jcode", "jcode"), ("jcode-desktop", "jcode-desktop")]
         }
     };
+    let cargo_command = display_build_command("cargo", &specs);
     let wrapper = repo_dir.join("scripts").join("dev_cargo.sh");
-    if wrapper.is_file() {
+    if wrapper.is_file()
+        && let Some(program) = selfdev_bash_program()
+    {
         let script = wrapper.to_string_lossy();
         let command = specs
             .iter()
@@ -199,17 +202,62 @@ pub fn selfdev_build_command_for_target(
             .collect::<Vec<_>>()
             .join(" && ");
         return SelfDevBuildCommand {
-            program: "bash".to_string(),
+            program,
             args: vec!["-lc".to_string(), command],
             display: display_build_command("scripts/dev_cargo.sh", &specs),
         };
     }
 
-    let command = display_build_command("cargo", &specs);
+    #[cfg(windows)]
+    if selfdev_bash_program().is_none() {
+        return SelfDevBuildCommand {
+            program: std::env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".to_string()),
+            args: vec![
+                "/D".to_string(),
+                "/S".to_string(),
+                "/C".to_string(),
+                cargo_command.clone(),
+            ],
+            display: cargo_command,
+        };
+    }
+
     SelfDevBuildCommand {
-        program: "bash".to_string(),
-        args: vec!["-lc".to_string(), command.clone()],
-        display: command,
+        program: selfdev_bash_program().unwrap_or_else(|| "bash".to_string()),
+        args: vec!["-lc".to_string(), cargo_command.clone()],
+        display: cargo_command,
+    }
+}
+
+fn selfdev_bash_program() -> Option<String> {
+    if let Some(program) = std::env::var_os("JCODE_BASH")
+        && !program.is_empty()
+    {
+        return Some(program.to_string_lossy().into_owned());
+    }
+    #[cfg(not(windows))]
+    {
+        Some("bash".to_string())
+    }
+    #[cfg(windows)]
+    {
+        let mut candidates = Vec::new();
+        if let Some(root) = std::env::var_os("ProgramFiles") {
+            candidates.push(PathBuf::from(root).join("Git/bin/bash.exe"));
+        }
+        if let Some(root) = std::env::var_os("ProgramFiles(x86)") {
+            candidates.push(PathBuf::from(root).join("Git/bin/bash.exe"));
+        }
+        if let Some(root) = std::env::var_os("LOCALAPPDATA") {
+            candidates.push(PathBuf::from(root).join("Programs/Git/bin/bash.exe"));
+        }
+        if let Some(root) = std::env::var_os("USERPROFILE") {
+            candidates.push(PathBuf::from(root).join("scoop/apps/git/current/bin/bash.exe"));
+        }
+        candidates
+            .into_iter()
+            .find(|path| path.is_file())
+            .map(|path| path.to_string_lossy().into_owned())
     }
 }
 
@@ -620,6 +668,27 @@ mod tests {
     fn is_jcode_repo_accepts_git_file_for_worktree() {
         let repo = repo_fixture(true);
         assert!(is_jcode_repo(repo.path()));
+    }
+
+    #[test]
+    fn selfdev_build_command_selects_a_runnable_shell() {
+        let repo = repo_fixture(false);
+        let scripts = repo.path().join("scripts");
+        std::fs::create_dir_all(&scripts).expect("scripts dir");
+        std::fs::write(scripts.join("dev_cargo.sh"), "#!/usr/bin/env bash\n")
+            .expect("dev cargo wrapper");
+
+        let command = selfdev_build_command_for_target(repo.path(), SelfDevBuildTarget::Tui);
+        #[cfg(windows)]
+        assert!(
+            Path::new(&command.program).is_file()
+                || command.program.eq_ignore_ascii_case("cmd.exe")
+                || std::env::var("COMSPEC").is_ok_and(|comspec| command.program == comspec),
+            "selfdev selected missing program: {}",
+            command.program
+        );
+        #[cfg(not(windows))]
+        assert_eq!(command.program, "bash");
     }
 
     /// Build a release-style install dir: `jcode` wrapper script + payload.
