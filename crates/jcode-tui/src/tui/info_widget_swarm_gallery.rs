@@ -177,21 +177,17 @@ pub(crate) fn render_swarm_page_lines(
     let mut out = vec![Line::from(vec![
         Span::styled("🐝 ", Style::default().fg(Color::Rgb(255, 200, 100))),
         Span::styled(
-            "swarm",
+            crate::tui::i18n::swarm_gallery_label(),
             Style::default().fg(Color::Rgb(230, 230, 240)).bold(),
         ),
         Span::styled(
-            format!(
-                " · {} agent{} · {active} active",
-                members.len(),
-                if members.len() == 1 { "" } else { "s" }
-            ),
+            crate::tui::i18n::swarm_gallery_header(members.len(), active),
             Style::default().fg(Color::Rgb(150, 150, 160)),
         ),
     ])];
     if max_height > 1 {
         out.push(Line::from(Span::styled(
-            "alt+n chat  ·  alt+↑/↓ select  ·  alt+o open  ·  alt+shift+p prompt  ·  esc chat",
+            crate::tui::i18n::swarm_gallery_hints(),
             Style::default().fg(Color::Rgb(105, 105, 120)),
         )));
     }
@@ -722,7 +718,7 @@ mod tests {
         assert!(!lines.is_empty());
         let header: String = lines[0].spans.iter().map(|s| s.content.as_ref()).collect();
         assert!(header.contains("🐝 2 agents · 1 active"), "got: {header}");
-        assert!(!header.contains("swarm"), "got: {header}");
+        assert!(!header.contains(crate::tui::i18n::swarm_gallery_label()), "got: {header}");
         for line in &lines {
             assert!(line.width() <= 80);
         }

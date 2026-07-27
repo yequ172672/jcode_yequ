@@ -518,6 +518,15 @@ pub fn onboarding_help_fix(agent: &str) -> String {
     }
 }
 pub fn onboarding_pick_login() -> &'static str { if_zh("按 Enter 选择登录对象（OpenAI、Anthropic 等）。", "Press Enter to pick who to log in with (OpenAI, Anthropic, and more).") }
+
+pub fn swarm_gallery_label() -> &'static str { if_zh("swarm", "swarm") }
+pub fn swarm_gallery_header(count: usize, active: usize) -> String {
+    match current_language() {
+        Language::Zh => format!("· {} agent{} · {} 活跃", count, if count == 1 { "" } else { "s" }, active),
+        Language::En => format!("· {} agent{} · {} active", count, if count == 1 { "" } else { "s" }, active),
+    }
+}
+pub fn swarm_gallery_hints() -> &'static str { if_zh("alt+n 聊天  ·  alt+↑/↓ 选择  ·  alt+o 打开  ·  alt+shift+p 提示  ·  esc 聊天", "alt+n chat  ·  alt+↑/↓ select  ·  alt+o open  ·  alt+shift+p prompt  ·  esc chat") }
 pub fn onboarding_press_number(count: usize) -> String {
     match current_language() {
         Language::Zh => format!("按 1-{} 或输入任意内容开始", count),
