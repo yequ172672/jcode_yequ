@@ -79,6 +79,7 @@ struct PersistedCatalog {
 
 pub struct BedrockProvider {
     model: Arc<RwLock<String>>,
+    reasoning_effort: Arc<RwLock<Option<String>>>,
     fetched_models: Arc<RwLock<Vec<String>>>,
     fetched_inference_profiles: Arc<RwLock<Vec<String>>>,
     profile_required_models: Arc<RwLock<HashSet<String>>>,
@@ -92,6 +93,7 @@ impl BedrockProvider {
             std::env::var("JCODE_BEDROCK_MODEL").unwrap_or_else(|_| DEFAULT_MODEL.to_string());
         let provider = Self {
             model: Arc::new(RwLock::new(model)),
+            reasoning_effort: Arc::new(RwLock::new(None)),
             fetched_models: Arc::new(RwLock::new(Vec::new())),
             fetched_inference_profiles: Arc::new(RwLock::new(Vec::new())),
             profile_required_models: Arc::new(RwLock::new(HashSet::new())),
@@ -653,11 +655,12 @@ impl BedrockProvider {
     }
 
     #[cfg(feature = "aws-sdk")]
-    fn inference_config() -> Option<InferenceConfiguration> {
+    fn inference_config(default_max_tokens: Option<i32>) -> Option<InferenceConfiguration> {
         let max_tokens = std::env::var("JCODE_BEDROCK_MAX_TOKENS")
             .ok()
             .and_then(|v| v.trim().parse::<i32>().ok())
-            .filter(|v| *v > 0);
+            .filter(|v| *v > 0)
+            .or(default_max_tokens);
         let temperature = std::env::var("JCODE_BEDROCK_TEMPERATURE")
             .ok()
             .and_then(|v| v.trim().parse::<f32>().ok())
@@ -968,6 +971,76 @@ impl BedrockProvider {
         }
     }
 
+    fn is_anthropic_reasoning_model(model: &str) -> bool {
+        let id = Self::normalize_model_id(model).to_ascii_lowercase();
+        id.starts_with("anthropic.claude") && Self::model_info(&id).supports_reasoning
+    }
+
+    fn reasoning_output_limit(model: &str) -> usize {
+        let fallback = || Self::model_info(model).max_output_tokens;
+        match std::env::var("JCODE_BEDROCK_MAX_TOKENS") {
+            Ok(value) => match value.trim().parse::<usize>() {
+                Ok(limit) if limit > 0 => limit,
+                _ => {
+                    jcode_logging::warn(&format!(
+                        "Ignoring invalid JCODE_BEDROCK_MAX_TOKENS '{value}'; using the model limit"
+                    ));
+                    fallback()
+                }
+            },
+            Err(std::env::VarError::NotPresent) => fallback(),
+            Err(error) => {
+                jcode_logging::warn(&format!(
+                    "Could not read JCODE_BEDROCK_MAX_TOKENS ({error}); using the model limit"
+                ));
+                fallback()
+            }
+        }
+    }
+
+    fn reasoning_budget_for_effort(effort: jcode_provider_core::ReasoningEffort) -> Option<usize> {
+        use jcode_provider_core::ReasoningEffort::{High, Low, Max, Medium, Minimal, None, XHigh};
+        match effort {
+            None => Option::None,
+            Minimal => Some(1_024),
+            Low => Some(2_048),
+            Medium => Some(4_096),
+            High => Some(8_192),
+            XHigh => Some(16_384),
+            Max => Some(32_768),
+        }
+    }
+
+    fn reasoning_capability(model: &str) -> jcode_provider_core::ReasoningCapability {
+        use jcode_provider_core::ReasoningEffort::{High, Low, Max, Medium, Minimal, None, XHigh};
+        if !Self::is_anthropic_reasoning_model(model) {
+            return jcode_provider_core::ReasoningCapability::new([]);
+        }
+        let output_limit = Self::reasoning_output_limit(model);
+        let efforts = [None, Minimal, Low, Medium, High, XHigh, Max]
+            .into_iter()
+            .filter(|effort| {
+                Self::reasoning_budget_for_effort(*effort)
+                    .is_none_or(|budget| budget.saturating_add(1_024) <= output_limit)
+            });
+        jcode_provider_core::ReasoningCapability::new(efforts)
+    }
+
+    #[cfg(feature = "aws-sdk")]
+    fn reasoning_request_fields(model: &str, effort: Option<&str>) -> Option<Value> {
+        if !Self::is_anthropic_reasoning_model(model) {
+            return None;
+        }
+        let effort = effort.and_then(jcode_provider_core::parse_reasoning_effort)?;
+        let budget = Self::reasoning_budget_for_effort(effort)?;
+        Some(json!({
+            "thinking": {
+                "type": "enabled",
+                "budget_tokens": budget,
+            }
+        }))
+    }
+
     fn route_pricing(model: &str) -> Option<RouteCheapnessEstimate> {
         let info = Self::model_info(model);
         info.pricing.map(|(input, output)| {
@@ -1168,7 +1241,13 @@ impl Provider for BedrockProvider {
         } else {
             None
         };
-        let inference_config = Self::inference_config();
+        let reasoning_fields =
+            Self::reasoning_request_fields(&model, self.reasoning_effort().as_deref());
+        let inference_config = Self::inference_config(
+            reasoning_fields
+                .is_some()
+                .then(|| Self::reasoning_output_limit(&model) as i32),
+        );
         let system_blocks = if system.trim().is_empty() {
             None
         } else {
@@ -1192,6 +1271,7 @@ impl Provider for BedrockProvider {
             "supports_tools": info.supports_tools,
             "supports_vision": info.supports_vision,
             "inference_config_present": inference_config.is_some(),
+            "reasoning": reasoning_fields.as_ref(),
         });
         jcode_provider_core::log_provider_canonical_input(
             "bedrock",
@@ -1226,6 +1306,10 @@ impl Provider for BedrockProvider {
             }
             if let Some(inference_config) = inference_config {
                 req = req.inference_config(inference_config);
+            }
+            if let Some(reasoning_fields) = reasoning_fields {
+                req =
+                    req.additional_model_request_fields(Self::json_to_document(&reasoning_fields));
             }
             let resp = match req.send().await {
                 Ok(resp) => resp,
@@ -1356,6 +1440,49 @@ impl Provider for BedrockProvider {
         Ok(())
     }
 
+    fn reasoning_effort(&self) -> Option<String> {
+        if Self::reasoning_capability(&self.model()).is_empty() {
+            return None;
+        }
+        self.reasoning_effort
+            .read()
+            .map(|guard| guard.clone())
+            .unwrap_or_else(|poisoned| poisoned.into_inner().clone())
+    }
+
+    fn set_reasoning_effort(&self, effort: &str) -> Result<()> {
+        let requested = if jcode_provider_core::canonical_reasoning_effort(effort).is_some() {
+            effort
+        } else if matches!(effort.trim(), "swarm" | "swarm-deep") {
+            "max"
+        } else {
+            anyhow::bail!("Unsupported Bedrock reasoning effort '{effort}'");
+        };
+        let capability = Self::reasoning_capability(&self.model());
+        let resolved = match jcode_provider_core::resolve_reasoning_effort(requested, &capability) {
+            jcode_provider_core::ReasoningResolution::Applied { resolved, .. } => {
+                resolved.as_str().to_string()
+            }
+            jcode_provider_core::ReasoningResolution::Unapplied { .. } => anyhow::bail!(
+                "Bedrock model '{}' has no documented Converse reasoning control",
+                self.model()
+            ),
+        };
+        *self
+            .reasoning_effort
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(resolved);
+        Ok(())
+    }
+
+    fn available_efforts(&self) -> Vec<&'static str> {
+        if Self::reasoning_capability(&self.model()).is_empty() {
+            Vec::new()
+        } else {
+            jcode_provider_core::OPENAI_SELECTABLE_EFFORTS.to_vec()
+        }
+    }
+
     fn available_models(&self) -> Vec<&'static str> {
         Self::known_models()
     }
@@ -1480,6 +1607,7 @@ impl Provider for BedrockProvider {
     fn fork(&self) -> Arc<dyn Provider> {
         Arc::new(Self {
             model: Arc::new(RwLock::new(self.model())),
+            reasoning_effort: Arc::new(RwLock::new(self.reasoning_effort())),
             fetched_models: self.fetched_models.clone(),
             fetched_inference_profiles: self.fetched_inference_profiles.clone(),
             profile_required_models: self.profile_required_models.clone(),
@@ -1878,6 +2006,54 @@ mod tests {
         p.set_model("amazon.nova-micro-v1:0").unwrap();
         assert!(!p.supports_image_input());
         assert_eq!(p.context_window(), 128_000);
+    }
+
+    #[test]
+    fn claude_reasoning_capability_respects_model_output_budget() {
+        let claude_37 =
+            BedrockProvider::reasoning_capability("anthropic.claude-3-7-sonnet-20250219-v1:0");
+        assert_eq!(
+            jcode_provider_core::resolve_reasoning_effort("max", &claude_37),
+            jcode_provider_core::ReasoningResolution::Applied {
+                requested: jcode_provider_core::ReasoningEffort::Max,
+                resolved: jcode_provider_core::ReasoningEffort::Medium,
+                reason: jcode_provider_core::ReasoningResolutionReason::DowngradedToStrongestSupportedAtOrBelowRequest,
+            }
+        );
+
+        let claude_4 =
+            BedrockProvider::reasoning_capability("anthropic.claude-sonnet-4-20250514-v1:0");
+        assert!(
+            claude_4
+                .efforts
+                .contains(&jcode_provider_core::ReasoningEffort::Max)
+        );
+        assert!(BedrockProvider::reasoning_capability("deepseek.r1-v1:0").is_empty());
+    }
+
+    #[cfg(feature = "aws-sdk")]
+    #[test]
+    fn claude_reasoning_request_uses_documented_additional_fields() {
+        assert_eq!(
+            BedrockProvider::reasoning_request_fields(
+                "anthropic.claude-sonnet-4-20250514-v1:0",
+                Some("high"),
+            ),
+            Some(json!({
+                "thinking": {"type": "enabled", "budget_tokens": 8192}
+            }))
+        );
+        assert_eq!(
+            BedrockProvider::reasoning_request_fields(
+                "anthropic.claude-sonnet-4-20250514-v1:0",
+                Some("none"),
+            ),
+            None
+        );
+        assert_eq!(
+            BedrockProvider::reasoning_request_fields("deepseek.r1-v1:0", Some("high")),
+            None
+        );
     }
 
     #[test]

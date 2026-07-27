@@ -52,6 +52,15 @@ impl App {
                 self.session.provider_key.as_deref(),
             );
         self.session.model = Some(active_model.clone());
+        if let Some(preference) = self.session.reasoning_effort.as_deref()
+            && !self.provider.available_efforts().is_empty()
+            && let Err(error) = self.provider.set_reasoning_effort(preference)
+        {
+            crate::logging::warn(&format!(
+                "Could not reapply reasoning effort preference '{}' after switching to '{}': {}",
+                preference, active_model, error
+            ));
+        }
         let _ = self.session.save();
         active_model
     }
@@ -579,12 +588,16 @@ impl App {
         // same source the model picker uses), since `self.provider` is a local
         // stand-in. Local sessions read the real provider. This keeps the cycle
         // and the picker consistent (both expose swarm / swarm-deep).
-        let efforts = if self.is_remote {
-            let (provider_name, provider_model) = self.remote_effort_identity();
-            inferred_reasoning_efforts(provider_name.as_deref(), provider_model.as_deref())
+        let (provider_name, provider_model) = if self.is_remote {
+            self.remote_effort_identity()
         } else {
-            self.provider.available_efforts()
+            (
+                Some(self.provider.display_name()),
+                Some(self.provider.model()),
+            )
         };
+        let efforts =
+            inferred_reasoning_efforts(provider_name.as_deref(), provider_model.as_deref());
         if efforts.is_empty() {
             self.set_status_notice("Reasoning effort not available for this provider");
             return;
@@ -593,7 +606,10 @@ impl App {
         let current = if self.is_remote {
             self.remote_reasoning_effort_hint()
         } else {
-            self.provider.reasoning_effort()
+            self.session
+                .reasoning_effort
+                .clone()
+                .or_else(|| self.provider.reasoning_effort())
         };
         let current_index = current
             .as_ref()
@@ -624,9 +640,37 @@ impl App {
             return;
         }
 
-        match self.provider.set_reasoning_effort(next_effort) {
+        if self.is_remote {
+            self.set_status_notice(format!(
+                "Effort: {} (will apply to next request)",
+                effort_display_label(next_effort)
+            ));
+            return;
+        }
+
+        let apply_result = if self.provider.available_efforts().is_empty() {
+            Ok(())
+        } else {
+            self.provider.set_reasoning_effort(next_effort)
+        };
+        match apply_result {
             Ok(()) => {
-                let label = effort_display_label(next_effort);
+                self.session.reasoning_effort = Some(next_effort.to_string());
+                if let Err(error) = self.session.save() {
+                    crate::logging::warn(&format!(
+                        "Could not persist reasoning effort preference: {error}"
+                    ));
+                }
+                let effective = self.provider.reasoning_effort();
+                let label = match effective.as_deref() {
+                    Some(value) if value != next_effort => format!(
+                        "{} → {}",
+                        effort_display_label(next_effort),
+                        effort_display_label(value)
+                    ),
+                    Some(value) => effort_display_label(value).to_string(),
+                    None => format!("{} · provider default", effort_display_label(next_effort)),
+                };
                 let bar = effort_bar(next_index, len);
                 self.set_status_notice(format!("Effort: {} {}", label, bar));
             }
@@ -1510,8 +1554,15 @@ pub(super) fn handle_model_command(app: &mut App, trimmed: &str) -> bool {
 
     if trimmed == "/effort" {
         app.record_keybinding_slow(crate::tui::app::shortcut_hints::LearnableAction::EffortCycle);
-        let current = app.provider.reasoning_effort();
-        let efforts = app.provider.available_efforts();
+        let current = app
+            .session
+            .reasoning_effort
+            .clone()
+            .or_else(|| app.provider.reasoning_effort());
+        let efforts = inferred_reasoning_efforts(
+            Some(&app.provider.display_name()),
+            Some(&app.provider.model()),
+        );
         if efforts.is_empty() {
             app.push_display_message(DisplayMessage::system(
                 "Reasoning effort not available for this provider.".to_string(),
@@ -1543,24 +1594,51 @@ pub(super) fn handle_model_command(app: &mut App, trimmed: &str) -> bool {
 
     if let Some(level) = trimmed.strip_prefix("/effort ") {
         app.record_keybinding_slow(crate::tui::app::shortcut_hints::LearnableAction::EffortCycle);
-        let level = level.trim();
-        match app.provider.set_reasoning_effort(level) {
+        let level = level.trim().to_ascii_lowercase();
+        let selectable = inferred_reasoning_efforts(
+            Some(&app.provider.display_name()),
+            Some(&app.provider.model()),
+        );
+        if !selectable.contains(&level.as_str()) {
+            app.push_display_message(DisplayMessage::error(format!(
+                "Failed to set effort: unsupported value '{}'; expected {}",
+                level,
+                selectable.join("|")
+            )));
+            return true;
+        }
+        let apply_result = if app.provider.available_efforts().is_empty() {
+            Ok(())
+        } else {
+            app.provider.set_reasoning_effort(&level)
+        };
+        match apply_result {
             Ok(()) => {
+                app.session.reasoning_effort = Some(level.clone());
+                if let Err(error) = app.session.save() {
+                    crate::logging::warn(&format!(
+                        "Could not persist reasoning effort preference: {error}"
+                    ));
+                }
                 let new_effort = app.provider.reasoning_effort();
-                let label = new_effort
-                    .as_deref()
-                    .map(effort_display_label)
-                    .unwrap_or("default");
+                let label = match new_effort.as_deref() {
+                    Some(effective) if effective != level => format!(
+                        "{} → {}",
+                        effort_display_label(&level),
+                        effort_display_label(effective)
+                    ),
+                    Some(effective) => effort_display_label(effective).to_string(),
+                    None => format!("{} · provider default", effort_display_label(&level)),
+                };
                 app.push_display_message(DisplayMessage::system(format!(
                     "✓ Reasoning effort → {}",
                     label
                 )));
-                let efforts = app.provider.available_efforts();
-                let idx = new_effort
-                    .as_ref()
-                    .and_then(|e| efforts.iter().position(|x| *x == e.as_str()))
+                let idx = selectable
+                    .iter()
+                    .position(|value| *value == level)
                     .unwrap_or(0);
-                let bar = effort_bar(idx, efforts.len());
+                let bar = effort_bar(idx, selectable.len());
                 app.set_status_notice(format!("Effort: {} {}", label, bar));
             }
             Err(e) => {

@@ -693,7 +693,7 @@ fn sonnet5_reasoning_effort_absent_when_unset() {
 #[test]
 fn sonnet5_rejects_invalid_efforts() {
     let provider = sonnet5_provider();
-    for bad in ["none", "minimal", "banana", ""] {
+    for bad in ["banana", ""] {
         let err = Provider::set_reasoning_effort(&provider, bad).unwrap_err();
         assert!(
             err.to_string().contains("Unsupported reasoning effort"),
@@ -701,6 +701,19 @@ fn sonnet5_rejects_invalid_efforts() {
         );
     }
     assert_eq!(Provider::reasoning_effort(&provider), None);
+}
+
+#[test]
+fn sonnet5_resolves_unavailable_low_end_efforts_to_low() {
+    let provider = sonnet5_provider();
+    for requested in ["none", "minimal"] {
+        Provider::set_reasoning_effort(&provider, requested).unwrap();
+        assert_eq!(
+            Provider::reasoning_effort(&provider).as_deref(),
+            Some("low"),
+            "{requested} should resolve to Copilot's lowest supported value"
+        );
+    }
 }
 
 #[test]
@@ -717,6 +730,18 @@ fn sonnet5_accepts_all_supported_efforts() {
         Provider::available_efforts(&provider),
         vec!["low", "medium", "high", "xhigh", "max"]
     );
+}
+
+#[test]
+fn sonnet5_maps_swarm_sentinels_to_max() {
+    let provider = sonnet5_provider();
+    for effort in ["swarm", "swarm-deep"] {
+        Provider::set_reasoning_effort(&provider, effort).unwrap();
+        assert_eq!(
+            Provider::reasoning_effort(&provider).as_deref(),
+            Some("max")
+        );
+    }
 }
 
 #[test]

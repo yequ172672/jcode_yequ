@@ -528,12 +528,11 @@ impl AnthropicProvider {
             "off" | "disabled" => Some("none".to_string()),
             // `swarm` is a UI sentinel meaning "max effort + use the swarm tool".
             // Stored verbatim; resolved to a real effort in `actual_effort_for_model`.
-            "none" | "low" | "medium" | "high" | "xhigh" | "max" | "swarm" | "swarm-deep" => {
-                Some(value)
-            }
+            "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | "swarm"
+            | "swarm-deep" => Some(value),
             other => {
                 jcode_base::logging::info(&format!(
-                    "Warning: Ignoring unsupported Anthropic reasoning effort '{}'; expected none|low|medium|high|xhigh|max.",
+                    "Warning: Ignoring unsupported Anthropic reasoning effort '{}'; expected none|minimal|low|medium|high|xhigh|max.",
                     other
                 ));
                 None
@@ -1170,6 +1169,7 @@ impl Provider for AnthropicProvider {
                     | "off"
                     | "disabled"
                     | "none"
+                    | "minimal"
                     | "low"
                     | "medium"
                     | "high"
@@ -1180,21 +1180,49 @@ impl Provider for AnthropicProvider {
             )
         {
             anyhow::bail!(
-                "Unsupported Anthropic reasoning effort '{}'; expected none|low|medium|high|xhigh|max|swarm|swarm-deep",
+                "Unsupported Anthropic reasoning effort '{}'; expected none|minimal|low|medium|high|xhigh|max|swarm|swarm-deep",
                 effort
             );
         }
-        let normalized = Self::normalize_reasoning_effort(effort);
+        let mut normalized = Self::normalize_reasoning_effort(effort);
         let model = self.model();
         if normalized.is_some() && !Self::model_supports_reasoning_effort(&model) {
             anyhow::bail!(
                 "Reasoning effort is only supported for Claude 3.7 reasoning models and Claude 4.5+ models that expose Anthropic thinking/output_config"
             );
         }
-        if normalized.as_deref() == Some("xhigh") && !Self::model_supports_xhigh_effort(&model) {
-            anyhow::bail!(
-                "Anthropic xhigh effort is not supported by this model (available on Opus 4.7+, Sonnet 5+, and Fable 5+)"
+        if let Some(requested) = normalized.as_deref()
+            && !jcode_base::prompt::is_swarm_effort(requested)
+        {
+            let capability = jcode_provider_core::ReasoningCapability::from_values(
+                self.available_efforts()
+                    .into_iter()
+                    .filter(|value| !jcode_base::prompt::is_swarm_effort(value)),
             );
+            match jcode_provider_core::resolve_reasoning_effort(requested, &capability) {
+                jcode_provider_core::ReasoningResolution::Applied {
+                    requested,
+                    resolved,
+                    reason,
+                } => {
+                    if requested != resolved {
+                        jcode_base::logging::info(&format!(
+                            "Anthropic reasoning effort fallback for model '{}': {} -> {} ({:?})",
+                            model,
+                            requested.as_str(),
+                            resolved.as_str(),
+                            reason
+                        ));
+                    }
+                    normalized = Some(resolved.as_str().to_string());
+                }
+                jcode_provider_core::ReasoningResolution::Unapplied { .. } => {
+                    anyhow::bail!(
+                        "Anthropic model '{}' does not advertise a usable reasoning effort",
+                        model
+                    );
+                }
+            }
         }
         let normalized = normalized.map(|effort| Self::store_effort_for_model(&model, &effort));
         match self.reasoning_effort.write() {

@@ -224,7 +224,8 @@ fn test_history_event_roundtrip_preserves_side_panel_snapshot() -> Result<()> {
         status_detail: None,
         upstream_provider: None,
         resolved_credential: None,
-        reasoning_effort: None,
+        reasoning_effort: Some("high".to_string()),
+        requested_reasoning_effort: Some("max".to_string()),
         service_tier: None,
         subagent_model: None,
         autoreview_enabled: None,
@@ -252,6 +253,8 @@ fn test_history_event_roundtrip_preserves_side_panel_snapshot() -> Result<()> {
         messages,
         provider_name,
         provider_model,
+        reasoning_effort,
+        requested_reasoning_effort,
         total_tokens,
         token_usage_totals,
         ..
@@ -262,6 +265,8 @@ fn test_history_event_roundtrip_preserves_side_panel_snapshot() -> Result<()> {
     assert_eq!(id, 101);
     assert_eq!(provider_name.as_deref(), Some("openai"));
     assert_eq!(provider_model.as_deref(), Some("gpt-5.4"));
+    assert_eq!(reasoning_effort.as_deref(), Some("high"));
+    assert_eq!(requested_reasoning_effort.as_deref(), Some("max"));
     assert_eq!(total_tokens, Some((123, 45)));
     assert_eq!(
         token_usage_totals.map(|totals| totals.cache_read_input_tokens),

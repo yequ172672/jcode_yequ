@@ -99,13 +99,11 @@ async fn apply_remote_effort_direction(
             if direction > 0 { "max" } else { "min" }
         ));
     } else {
-        app.remote_reasoning_effort = Some(next_effort.to_string());
-        app.invalidate_model_picker_cache();
+        remote.set_reasoning_effort(next_effort).await?;
         app.set_status_notice(format!(
-            "Effort: {} (will apply to next request)",
+            "Requesting effort: {}...",
             app_mod::effort_display_label(next_effort)
         ));
-        remote.set_reasoning_effort(next_effort).await?;
     }
     Ok(())
 }
@@ -1167,7 +1165,7 @@ async fn handle_remote_key_internal(
                 }
 
                 if let Some(level) = trimmed.strip_prefix("/effort ") {
-                    let level = level.trim();
+                    let level = level.trim().to_ascii_lowercase();
                     if level.is_empty() {
                         app.push_display_message(DisplayMessage::error("Usage: /effort <level>"));
                         return Ok(());
@@ -1177,15 +1175,19 @@ async fn handle_remote_key_internal(
                         provider_name.as_deref(),
                         provider_model.as_deref(),
                     );
-                    if efforts.contains(&level) {
-                        app.remote_reasoning_effort = Some(level.to_string());
-                        app.invalidate_model_picker_cache();
-                        app.set_status_notice(format!(
-                            "Effort: {} (will apply to next request)",
-                            app_mod::effort_display_label(level)
-                        ));
+                    if !efforts.contains(&level.as_str()) {
+                        app.push_display_message(DisplayMessage::error(format!(
+                            "Unsupported effort '{}'; expected {}",
+                            level,
+                            efforts.join("|")
+                        )));
+                        return Ok(());
                     }
-                    remote.set_reasoning_effort(level).await?;
+                    remote.set_reasoning_effort(&level).await?;
+                    app.set_status_notice(format!(
+                        "Requesting effort: {}...",
+                        app_mod::effort_display_label(&level)
+                    ));
                     return Ok(());
                 }
 

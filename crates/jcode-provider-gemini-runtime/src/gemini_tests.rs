@@ -54,6 +54,46 @@ fn set_model_accepts_gemini_models() {
 }
 
 #[test]
+fn gemini_reasoning_capability_falls_back_to_documented_levels() {
+    let pro = GeminiProvider::reasoning_capability("gemini-3-pro-preview");
+    assert_eq!(
+        jcode_provider_core::resolve_reasoning_effort("medium", &pro),
+        jcode_provider_core::ReasoningResolution::Applied {
+            requested: jcode_provider_core::ReasoningEffort::Medium,
+            resolved: jcode_provider_core::ReasoningEffort::Low,
+            reason: jcode_provider_core::ReasoningResolutionReason::DowngradedToStrongestSupportedAtOrBelowRequest,
+        }
+    );
+    assert_eq!(
+        jcode_provider_core::resolve_reasoning_effort("max", &pro),
+        jcode_provider_core::ReasoningResolution::Applied {
+            requested: jcode_provider_core::ReasoningEffort::Max,
+            resolved: jcode_provider_core::ReasoningEffort::High,
+            reason: jcode_provider_core::ReasoningResolutionReason::DowngradedToStrongestSupportedAtOrBelowRequest,
+        }
+    );
+    assert!(GeminiProvider::reasoning_capability("gemini-2.0-flash").is_empty());
+}
+
+#[test]
+fn gemini_reasoning_wire_config_is_model_family_specific() {
+    let gemini_3 =
+        GeminiProvider::generation_config_for_effort("gemini-3-flash-preview", Some("medium"))
+            .unwrap();
+    assert_eq!(
+        serde_json::to_value(gemini_3).unwrap(),
+        json!({"thinkingConfig": {"thinkingLevel": "medium"}})
+    );
+
+    let gemini_25 =
+        GeminiProvider::generation_config_for_effort("gemini-2.5-pro", Some("medium")).unwrap();
+    assert_eq!(
+        serde_json::to_value(gemini_25).unwrap(),
+        json!({"thinkingConfig": {"thinkingBudget": 8192}})
+    );
+}
+
+#[test]
 fn detects_model_not_found_errors() {
     let err = anyhow::anyhow!(
         "Gemini request generateContent failed (HTTP 404 Not Found): {{\"error\":{{\"status\":\"NOT_FOUND\",\"message\":\"Requested entity was not found.\"}}}}"

@@ -116,7 +116,8 @@ pub struct Session {
     /// "openai-compatible:nvidia-nim", "openai-api").
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub route_api_method: Option<String>,
-    /// Provider reasoning/thinking effort for this session (e.g., OpenAI low|medium|high|xhigh).
+    /// Durable user reasoning/thinking preference for this session. The active
+    /// provider may resolve it to a lower model-supported value at runtime.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reasoning_effort: Option<String>,
     /// Optional fixed model to use for subagents launched from this session.

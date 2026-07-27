@@ -25,6 +25,27 @@ enum WidgetProviderKind {
     Unknown,
 }
 
+#[cfg(test)]
+mod reasoning_effort_display_tests {
+    use super::reasoning_effort_display;
+
+    #[test]
+    fn distinguishes_requested_fallback_and_unapplied_provider_default() {
+        assert_eq!(
+            reasoning_effort_display(Some("max"), Some("high")).as_deref(),
+            Some("max→high")
+        );
+        assert_eq!(
+            reasoning_effort_display(Some("max"), None).as_deref(),
+            Some("max→default")
+        );
+        assert_eq!(
+            reasoning_effort_display(Some("high"), Some("high")).as_deref(),
+            Some("high")
+        );
+    }
+}
+
 impl WidgetProviderKind {
     fn from_provider_key(raw: Option<&str>) -> Self {
         match raw.map(|provider| provider.trim().to_ascii_lowercase()) {
@@ -56,6 +77,19 @@ impl WidgetProviderKind {
 struct WidgetRouteInfo {
     provider: WidgetProviderKind,
     is_remote: bool,
+}
+
+fn reasoning_effort_display(requested: Option<&str>, effective: Option<&str>) -> Option<String> {
+    let requested = requested.map(str::trim).filter(|value| !value.is_empty());
+    let effective = effective.map(str::trim).filter(|value| !value.is_empty());
+    match (requested, effective) {
+        (Some(requested), Some(effective)) if requested != effective => {
+            Some(format!("{requested}→{effective}"))
+        }
+        (Some(requested), None) => Some(format!("{requested}→default")),
+        (_, Some(effective)) => Some(effective.to_string()),
+        (None, None) => None,
+    }
 }
 
 impl App {
@@ -110,25 +144,29 @@ impl App {
     /// reported one yet, so pre-settle effort cycling starts from the value the
     /// session will actually use instead of assuming the maximum.
     pub(super) fn remote_reasoning_effort_hint(&self) -> Option<String> {
-        self.remote_reasoning_effort.clone().or_else(|| {
-            let (provider, model) = self.remote_effort_identity();
-            let provider = provider.unwrap_or_default().to_ascii_lowercase();
-            let model = model.unwrap_or_default().to_ascii_lowercase();
-            let cfg = &crate::config::config().provider;
-            if provider.contains("anthropic")
-                || provider.contains("claude")
-                || model.starts_with("claude-")
-            {
-                cfg.anthropic_reasoning_effort.clone()
-            } else if provider.contains("openai")
-                || provider.contains("codex")
-                || model.starts_with("gpt-")
-            {
-                cfg.openai_reasoning_effort.clone()
-            } else {
-                None
-            }
-        })
+        self.session
+            .reasoning_effort
+            .clone()
+            .or_else(|| self.remote_reasoning_effort.clone())
+            .or_else(|| {
+                let (provider, model) = self.remote_effort_identity();
+                let provider = provider.unwrap_or_default().to_ascii_lowercase();
+                let model = model.unwrap_or_default().to_ascii_lowercase();
+                let cfg = &crate::config::config().provider;
+                if provider.contains("anthropic")
+                    || provider.contains("claude")
+                    || model.starts_with("claude-")
+                {
+                    cfg.anthropic_reasoning_effort.clone()
+                } else if provider.contains("openai")
+                    || provider.contains("codex")
+                    || model.starts_with("gpt-")
+                {
+                    cfg.openai_reasoning_effort.clone()
+                } else {
+                    None
+                }
+            })
     }
 
     fn remote_header_provider_model(&self) -> Option<String> {
@@ -1267,7 +1305,7 @@ impl crate::tui::TuiState for App {
         let uses_remote_widget_metadata = self.is_remote || self.is_replay_runtime();
         let (
             model,
-            reasoning_effort,
+            effective_reasoning_effort,
             service_tier,
             native_compaction_mode,
             native_compaction_threshold_tokens,
@@ -1288,6 +1326,10 @@ impl crate::tui::TuiState for App {
                 self.provider.native_compaction_threshold_tokens(),
             )
         };
+        let reasoning_effort = reasoning_effort_display(
+            self.session.reasoning_effort.as_deref(),
+            effective_reasoning_effort.as_deref(),
+        );
 
         let (session_count, client_count) = if self.is_remote {
             (Some(self.remote_sessions.len()), None)

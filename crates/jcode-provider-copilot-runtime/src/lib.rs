@@ -1083,14 +1083,37 @@ impl Provider for CopilotApiProvider {
                 model
             );
         }
-        let normalized = effort.trim().to_lowercase();
-        if !SONNET5_EFFORTS.contains(&normalized.as_str()) {
-            anyhow::bail!(
-                "Unsupported reasoning effort '{}' for Copilot claude-sonnet-5. Supported: {}",
-                effort,
-                SONNET5_EFFORTS.join(", ")
-            );
-        }
+        let effort = if jcode_base::prompt::is_swarm_effort(effort) {
+            "max"
+        } else {
+            effort
+        };
+        let capability = jcode_provider_core::ReasoningCapability::from_values(SONNET5_EFFORTS);
+        let normalized = match jcode_provider_core::resolve_reasoning_effort(effort, &capability) {
+            jcode_provider_core::ReasoningResolution::Applied {
+                requested,
+                resolved,
+                reason,
+            } => {
+                if requested != resolved {
+                    jcode_base::logging::info(&format!(
+                        "Copilot reasoning effort fallback for model '{}': {} -> {} ({:?})",
+                        model,
+                        requested.as_str(),
+                        resolved.as_str(),
+                        reason
+                    ));
+                }
+                resolved.as_str().to_string()
+            }
+            jcode_provider_core::ReasoningResolution::Unapplied { .. } => {
+                anyhow::bail!(
+                    "Unsupported reasoning effort '{}' for Copilot claude-sonnet-5. Supported: {}",
+                    effort,
+                    SONNET5_EFFORTS.join(", ")
+                );
+            }
+        };
         let mut guard = self
             .reasoning_effort
             .write()

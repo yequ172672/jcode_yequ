@@ -1520,6 +1520,7 @@ pub(in crate::tui::app) fn handle_server_event(
             upstream_provider,
             resolved_credential,
             reasoning_effort,
+            requested_reasoning_effort,
             service_tier,
             compaction_mode,
             activity,
@@ -1691,6 +1692,8 @@ pub(in crate::tui::app) fn handle_server_event(
             if session_changed || status_detail.is_some() {
                 app.status_detail = status_detail;
             }
+            app.session.reasoning_effort =
+                requested_reasoning_effort.or_else(|| reasoning_effort.clone());
             app.remote_reasoning_effort = reasoning_effort;
             app.remote_service_tier = service_tier;
             app.remote_compaction_mode = Some(compaction_mode);
@@ -2299,18 +2302,40 @@ pub(in crate::tui::app) fn handle_server_event(
             // redraw happens.
             true
         }
-        ServerEvent::ReasoningEffortChanged { effort, error, .. } => {
+        ServerEvent::ReasoningEffortChanged {
+            requested_effort,
+            effort,
+            error,
+            ..
+        } => {
             if let Some(err) = error {
                 app.push_display_message(DisplayMessage::error(format!(
                     "Failed to set effort: {}",
                     err
                 )));
             } else {
+                let requested = requested_effort.or_else(|| effort.clone());
+                app.session.reasoning_effort = requested.clone();
                 app.remote_reasoning_effort = effort.clone();
-                let label = effort
-                    .as_deref()
-                    .map(app_mod::effort_display_label)
-                    .unwrap_or("default");
+                if let Err(error) = app.session.save() {
+                    crate::logging::warn(&format!(
+                        "Could not persist confirmed remote reasoning effort preference: {error}"
+                    ));
+                }
+                app.invalidate_model_picker_cache();
+                let label = match (requested.as_deref(), effort.as_deref()) {
+                    (Some(requested), Some(effective)) if requested != effective => format!(
+                        "{} → {}",
+                        app_mod::effort_display_label(requested),
+                        app_mod::effort_display_label(effective)
+                    ),
+                    (_, Some(effective)) => app_mod::effort_display_label(effective).to_string(),
+                    (Some(requested), None) => format!(
+                        "{} · provider default",
+                        app_mod::effort_display_label(requested)
+                    ),
+                    (None, None) => "default".to_string(),
+                };
                 app.push_display_message(DisplayMessage::system(format!(
                     "✓ Reasoning effort → {}",
                     label

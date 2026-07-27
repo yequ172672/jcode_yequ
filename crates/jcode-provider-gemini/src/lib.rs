@@ -148,8 +148,26 @@ pub struct VertexGenerateContentRequest {
     pub tools: Option<Vec<GeminiTool>>,
     #[serde(rename = "toolConfig", skip_serializing_if = "Option::is_none")]
     pub tool_config: Option<GeminiToolConfig>,
+    #[serde(rename = "generationConfig", skip_serializing_if = "Option::is_none")]
+    pub generation_config: Option<GeminiGenerationConfig>,
     #[serde(rename = "session_id", skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GeminiGenerationConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thinking_config: Option<GeminiThinkingConfig>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GeminiThinkingConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thinking_level: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thinking_budget: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -803,5 +821,32 @@ mod tests {
             .unwrap();
         assert!(content.role.is_empty());
         assert!(content.parts.is_empty());
+    }
+
+    #[test]
+    fn generate_content_serializes_documented_thinking_config() {
+        let request = VertexGenerateContentRequest {
+            contents: Vec::new(),
+            system_instruction: None,
+            tools: None,
+            tool_config: None,
+            generation_config: Some(GeminiGenerationConfig {
+                thinking_config: Some(GeminiThinkingConfig {
+                    thinking_level: None,
+                    thinking_budget: Some(4096),
+                }),
+            }),
+            session_id: None,
+        };
+
+        assert_eq!(
+            serde_json::to_value(request).unwrap(),
+            json!({
+                "contents": [],
+                "generationConfig": {
+                    "thinkingConfig": {"thinkingBudget": 4096}
+                }
+            })
+        );
     }
 }

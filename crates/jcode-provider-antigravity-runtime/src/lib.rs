@@ -304,6 +304,7 @@ impl AntigravityProvider {
                         },
                     })
                 },
+                generation_config: None,
                 session_id: resume_session_id
                     .filter(|value| !value.trim().is_empty())
                     .map(str::to_string),

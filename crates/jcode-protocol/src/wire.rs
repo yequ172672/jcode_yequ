@@ -1131,9 +1131,12 @@ pub enum ServerEvent {
         /// render usage/billing without re-deriving it from the provider name.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         resolved_credential: Option<jcode_provider_core::ResolvedCredential>,
-        /// Reasoning effort for providers that expose it
-        #[serde(skip_serializing_if = "Option::is_none")]
+        /// Provider-resolved reasoning effort currently applied on the wire.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         reasoning_effort: Option<String>,
+        /// Durable user preference before provider/model capability fallback.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        requested_reasoning_effort: Option<String>,
         /// Service tier override for OpenAI models
         #[serde(skip_serializing_if = "Option::is_none")]
         service_tier: Option<String>,
@@ -1214,6 +1217,8 @@ pub enum ServerEvent {
     #[serde(rename = "reasoning_effort_changed")]
     ReasoningEffortChanged {
         id: u64,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        requested_effort: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         effort: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]

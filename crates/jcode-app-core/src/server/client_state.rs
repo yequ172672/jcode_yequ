@@ -252,6 +252,7 @@ pub(super) async fn handle_get_model_catalog(
         upstream_provider: None,
         resolved_credential,
         reasoning_effort: None,
+        requested_reasoning_effort: None,
         service_tier: None,
         subagent_model: None,
         autoreview_enabled: None,
@@ -494,10 +495,8 @@ async fn send_history_from_persisted_session(
     let autoreview_enabled = session.autoreview_enabled;
     let autojudge_enabled = session.autojudge_enabled;
     let is_canary = session.is_canary;
-    let reasoning_effort = session
-        .reasoning_effort
-        .clone()
-        .or_else(|| provider.reasoning_effort());
+    let requested_reasoning_effort = session.reasoning_effort.clone();
+    let reasoning_effort = provider.reasoning_effort();
     drop(session);
 
     let messages = rendered_messages
@@ -544,6 +543,7 @@ async fn send_history_from_persisted_session(
         upstream_provider: None,
         resolved_credential: provider.active_resolved_credential(),
         reasoning_effort,
+        requested_reasoning_effort,
         service_tier: None,
         compaction_mode: crate::config::config().compaction.mode.clone(),
         activity,
@@ -591,6 +591,7 @@ pub(super) async fn send_history(
         connection_type,
         status_detail,
         reasoning_effort,
+        requested_reasoning_effort,
         service_tier,
         compaction_mode,
         token_usage_totals,
@@ -641,6 +642,7 @@ pub(super) async fn send_history(
 
         let provider_meta_start = Instant::now();
         let reasoning_effort = provider.reasoning_effort();
+        let requested_reasoning_effort = agent_guard.reasoning_effort_preference();
         let service_tier = provider.service_tier();
         let provider_meta_ms = provider_meta_start.elapsed().as_millis();
 
@@ -666,6 +668,7 @@ pub(super) async fn send_history(
             agent_guard.last_connection_type(),
             agent_guard.last_status_detail(),
             reasoning_effort,
+            requested_reasoning_effort,
             service_tier,
             compaction_mode,
             agent_guard.token_usage_totals(),
@@ -757,6 +760,7 @@ pub(super) async fn send_history(
         upstream_provider,
         resolved_credential,
         reasoning_effort,
+        requested_reasoning_effort,
         service_tier,
         compaction_mode,
         activity,

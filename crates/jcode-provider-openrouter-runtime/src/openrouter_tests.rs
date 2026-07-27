@@ -1146,6 +1146,37 @@ fn make_custom_compatible_provider() -> OpenRouterProvider {
     }
 }
 
+fn read_test_http_request(stream: &mut std::net::TcpStream) -> String {
+    let mut bytes = Vec::new();
+    let mut chunk = [0u8; 4096];
+    let mut expected_len = None;
+    loop {
+        let read = stream.read(&mut chunk).unwrap_or(0);
+        if read == 0 {
+            break;
+        }
+        bytes.extend_from_slice(&chunk[..read]);
+
+        if expected_len.is_none()
+            && let Some(header_end) = bytes.windows(4).position(|window| window == b"\r\n\r\n")
+        {
+            let headers = String::from_utf8_lossy(&bytes[..header_end]);
+            let content_length = headers.lines().find_map(|line| {
+                let (name, value) = line.split_once(':')?;
+                name.eq_ignore_ascii_case("content-length")
+                    .then(|| value.trim().parse::<usize>().ok())
+                    .flatten()
+            });
+            expected_len = Some(header_end + 4 + content_length.unwrap_or(0));
+        }
+
+        if expected_len.is_some_and(|expected| bytes.len() >= expected) {
+            break;
+        }
+    }
+    String::from_utf8_lossy(&bytes).into_owned()
+}
+
 fn spawn_single_response_models_server(body: &'static str) -> (String, mpsc::Receiver<String>) {
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind fake provider server");
     let addr = listener.local_addr().expect("fake provider addr");
@@ -1156,9 +1187,7 @@ fn spawn_single_response_models_server(body: &'static str) -> (String, mpsc::Rec
         stream
             .set_read_timeout(Some(Duration::from_secs(2)))
             .expect("set read timeout");
-        let mut request = vec![0u8; 8192];
-        let n = stream.read(&mut request).unwrap_or(0);
-        let request = String::from_utf8_lossy(&request[..n]).into_owned();
+        let request = read_test_http_request(&mut stream);
         let _ = request_tx.send(request);
 
         let response = format!(
@@ -1184,9 +1213,7 @@ fn spawn_single_response_chat_server() -> (String, mpsc::Receiver<String>) {
         stream
             .set_read_timeout(Some(Duration::from_secs(2)))
             .expect("set read timeout");
-        let mut request = vec![0u8; 16384];
-        let n = stream.read(&mut request).unwrap_or(0);
-        let request = String::from_utf8_lossy(&request[..n]).into_owned();
+        let request = read_test_http_request(&mut stream);
         let _ = request_tx.send(request);
 
         let body = "data: [DONE]\n\n";
@@ -1198,6 +1225,47 @@ fn spawn_single_response_chat_server() -> (String, mpsc::Receiver<String>) {
         stream
             .write_all(response.as_bytes())
             .expect("write fake provider response");
+    });
+
+    (format!("http://{addr}/v1"), request_rx)
+}
+
+fn spawn_reasoning_rejection_then_success_server() -> (String, mpsc::Receiver<String>) {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind fake provider server");
+    let addr = listener.local_addr().expect("fake provider addr");
+    let (request_tx, request_rx) = mpsc::channel();
+
+    std::thread::spawn(move || {
+        for attempt in 0..2 {
+            let (mut stream, _) = listener.accept().expect("accept fake provider request");
+            stream
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .expect("set read timeout");
+            let request = read_test_http_request(&mut stream);
+            request_tx.send(request).expect("record provider request");
+
+            if attempt == 0 {
+                let body = r#"{"error":{"message":"reasoning_effort has an unsupported value"}}"#;
+                let response = format!(
+                    "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .expect("write rejection response");
+            } else {
+                let body = "data: [DONE]\n\n";
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .expect("write success response");
+            }
+        }
     });
 
     (format!("http://{addr}/v1"), request_rx)
@@ -1284,6 +1352,94 @@ fn openrouter_with_openrouter_profile_id_exposes_unified_reasoning_effort() {
         .set_reasoning_effort("high")
         .expect("OpenRouter with doctor profile id should accept effort");
     assert_eq!(provider.reasoning_effort().as_deref(), Some("high"));
+}
+
+#[test]
+fn opencode_go_profile_exposes_openai_reasoning_effort_for_any_model() {
+    let provider = OpenRouterProvider {
+        profile_id: Some("opencode-go".to_string()),
+        model: Arc::new(RwLock::new("vendor/custom-reasoning-model".to_string())),
+        ..make_custom_compatible_provider()
+    };
+
+    assert_eq!(
+        provider.available_efforts(),
+        jcode_provider_core::OPENAI_SELECTABLE_EFFORTS
+    );
+    provider.set_reasoning_effort("max").unwrap();
+    assert_eq!(provider.reasoning_effort().as_deref(), Some("max"));
+}
+
+#[test]
+fn compatible_profile_initial_effort_uses_the_active_wire_vocabulary() {
+    assert_eq!(
+        OpenRouterProvider::normalize_initial_reasoning_effort(
+            "minimal",
+            Some("opencode-go"),
+            "vendor/custom-model",
+        )
+        .as_deref(),
+        Some("minimal")
+    );
+    assert_eq!(
+        OpenRouterProvider::normalize_initial_reasoning_effort("xhigh", Some("custom"), "gpt-5.5",)
+            .as_deref(),
+        Some("xhigh")
+    );
+    assert_eq!(
+        OpenRouterProvider::normalize_initial_reasoning_effort(
+            "xhigh",
+            Some("custom"),
+            "deepseek-v4",
+        ),
+        None
+    );
+}
+
+#[test]
+fn opencode_go_request_downgrades_rejected_max_to_xhigh() {
+    let (api_base, request_rx) = spawn_reasoning_rejection_then_success_server();
+    let provider = OpenRouterProvider {
+        api_base,
+        profile_id: Some("opencode-go".to_string()),
+        model: Arc::new(RwLock::new("vendor/custom-reasoning-model".to_string())),
+        supports_model_catalog: false,
+        ..make_custom_compatible_provider()
+    };
+    provider.set_reasoning_effort("max").unwrap();
+
+    let messages = vec![Message {
+        role: Role::User,
+        content: vec![ContentBlock::Text {
+            text: "hello".to_string(),
+            cache_control: None,
+        }],
+        timestamp: None,
+        tool_duration_ms: None,
+    }];
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("runtime");
+    rt.block_on(async {
+        let mut stream = provider
+            .complete(&messages, &[], "", None)
+            .await
+            .expect("request should start");
+        while let Some(event) = stream.next().await {
+            event.expect("fallback request should finish successfully");
+        }
+    });
+
+    let first = request_rx
+        .recv_timeout(Duration::from_secs(2))
+        .expect("first request");
+    let second = request_rx
+        .recv_timeout(Duration::from_secs(2))
+        .expect("fallback request");
+    assert!(first.contains(r#""reasoning_effort":"max""#), "{first}");
+    assert!(second.contains(r#""reasoning_effort":"xhigh""#), "{second}");
+    assert_eq!(provider.reasoning_effort().as_deref(), Some("xhigh"));
 }
 
 #[test]
@@ -1560,6 +1716,58 @@ fn direct_openai_compatible_chat_request_preserves_max_reasoning_effort() {
         request.contains(r#""reasoning_effort":"max""#),
         "direct compatible request must preserve OpenAI max: {request}"
     );
+}
+
+#[test]
+fn explicit_extra_body_reasoning_does_not_overwrite_effective_state() {
+    let (api_base, request_rx) = spawn_single_response_chat_server();
+    let provider = OpenRouterProvider {
+        api_base,
+        model: Arc::new(RwLock::new("gpt-5.5".to_string())),
+        reasoning_effort: Arc::new(RwLock::new(Some("high".to_string()))),
+        extra_body: Some(
+            serde_json::json!({"reasoning_effort": "max"})
+                .as_object()
+                .unwrap()
+                .clone(),
+        ),
+        supports_provider_features: true,
+        supports_model_catalog: false,
+        send_openrouter_headers: true,
+        ..make_custom_compatible_provider()
+    };
+    let messages = vec![Message {
+        role: Role::User,
+        content: vec![ContentBlock::Text {
+            text: "hello".to_string(),
+            cache_control: None,
+        }],
+        timestamp: None,
+        tool_duration_ms: None,
+    }];
+
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("runtime");
+    rt.block_on(async {
+        let mut stream = provider.complete(&messages, &[], "", None).await.unwrap();
+        while let Some(event) = stream.next().await {
+            event.unwrap();
+        }
+    });
+
+    let request = request_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert!(request.contains(r#""reasoning_effort":"max""#));
+    assert!(
+        !request.contains(r#""reasoning":{"#),
+        "explicit reasoning_effort must suppress generated reasoning object: {request}"
+    );
+    assert!(
+        !request.contains(r#""thinking":{"#),
+        "explicit reasoning fields must suppress generated thinking: {request}"
+    );
+    assert_eq!(provider.reasoning_effort().as_deref(), Some("high"));
 }
 
 #[test]
@@ -2659,6 +2867,9 @@ fn midstream_transport_fault_emits_retry_rollback_before_replay() {
             tx,
             Arc::new(Mutex::new(None)),
             "test-model".to_string(),
+            false,
+            jcode_provider_core::OPENAI_SELECTABLE_EFFORTS,
+            None,
         )
         .await;
 
@@ -2725,7 +2936,9 @@ fn midstream_transport_fault_emits_retry_rollback_before_replay() {
 fn compat_profile_serving_deepseek_model_supports_reasoning_effort() {
     let provider = make_custom_compatible_provider();
 
-    // Non-DeepSeek model on a custom endpoint: no effort support.
+    // An anonymous generic endpoint still avoids guessing a wire field for an
+    // unknown model family. Named custom profiles opt into the OpenAI-compatible
+    // ladder and have request-level field rejection fallback.
     provider.set_model("some-random-model").unwrap();
     assert!(provider.available_efforts().is_empty());
     assert!(provider.set_reasoning_effort("high").is_err());
@@ -2807,10 +3020,8 @@ fn compatible_model_switch_clears_an_effort_invalid_for_the_new_vocabulary() {
     provider.set_reasoning_effort("minimal").unwrap();
     provider.set_model("deepseek-v4").unwrap();
     assert_eq!(provider.reasoning_effort(), None);
-    assert!(
-        provider.set_reasoning_effort("minimal").is_err(),
-        "DeepSeek must reject rather than silently promote minimal to max"
-    );
+    provider.set_reasoning_effort("minimal").unwrap();
+    assert_eq!(provider.reasoning_effort().as_deref(), Some("low"));
 }
 
 /// Issue #352: named-profile config can override effort support explicitly in
@@ -2821,14 +3032,16 @@ fn named_profile_supports_reasoning_effort_config_override() {
         reasoning_effort_support: Some(true),
         ..make_custom_compatible_provider()
     };
-    force_on.set_model("not-a-deepseek-model").unwrap();
+    force_on.set_model("custom-model").unwrap();
     assert_eq!(
         force_on.available_efforts(),
         vec![
             "none",
+            "minimal",
             "low",
             "medium",
             "high",
+            "xhigh",
             "max",
             "swarm",
             "swarm-deep"

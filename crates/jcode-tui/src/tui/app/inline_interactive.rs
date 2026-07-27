@@ -1032,9 +1032,12 @@ impl App {
         let config_default_provider = config.provider.default_provider.clone();
 
         let current_effort = if self.is_remote {
-            self.remote_reasoning_effort.clone()
+            self.remote_reasoning_effort_hint()
         } else {
-            self.provider.reasoning_effort()
+            self.session
+                .reasoning_effort
+                .clone()
+                .or_else(|| self.provider.reasoning_effort())
         }
         .or_else(|| current_model_suffix_effort.map(str::to_string));
         let available_efforts = if self.is_remote {
@@ -1276,9 +1279,12 @@ impl App {
         let config_default_model = config.provider.default_model.clone();
         let config_default_provider = config.provider.default_provider.clone();
         let current_effort = if self.is_remote {
-            self.remote_reasoning_effort.clone()
+            self.remote_reasoning_effort_hint()
         } else {
-            self.provider.reasoning_effort()
+            self.session
+                .reasoning_effort
+                .clone()
+                .or_else(|| self.provider.reasoning_effort())
         }
         .or_else(|| current_model_suffix_effort.map(str::to_string));
         let available_efforts = if self.is_remote {
@@ -1347,9 +1353,12 @@ impl App {
         let config_default_model = config.provider.default_model.clone();
         let config_default_provider = config.provider.default_provider.clone();
         let current_effort = if self.is_remote {
-            self.remote_reasoning_effort.clone()
+            self.remote_reasoning_effort_hint()
         } else {
-            self.provider.reasoning_effort()
+            self.session
+                .reasoning_effort
+                .clone()
+                .or_else(|| self.provider.reasoning_effort())
         }
         .or_else(|| current_model_suffix_effort.map(str::to_string));
 
@@ -1883,9 +1892,12 @@ impl App {
         let config_default_model = config.provider.default_model.clone();
         let config_default_provider = config.provider.default_provider.clone();
         let current_effort = if self.is_remote {
-            self.remote_reasoning_effort.clone()
+            self.remote_reasoning_effort_hint()
         } else {
-            self.provider.reasoning_effort()
+            self.session
+                .reasoning_effort
+                .clone()
+                .or_else(|| self.provider.reasoning_effort())
         };
         let available_efforts = if self.is_remote {
             inferred_reasoning_efforts(
@@ -3414,7 +3426,7 @@ impl App {
                         // confirmation. Show just the model in that case.
                         let placeholder_route =
                             placeholder_routes::is_placeholder_route_method(&route.api_method);
-                        let notice = if placeholder_route {
+                        let mut notice = if placeholder_route {
                             format!("Model → {}", entry.name)
                         } else {
                             format!(
@@ -3522,8 +3534,41 @@ impl App {
                                 }
                             }
                         }
-                        if let Some(effort) = effort {
-                            let _ = self.provider.set_reasoning_effort(&effort);
+                        if let Some(effort) = effort
+                            && !self.is_remote
+                        {
+                            self.session.reasoning_effort = Some(effort.clone());
+                            let effective = if self.provider.available_efforts().is_empty() {
+                                None
+                            } else {
+                                match self.provider.set_reasoning_effort(&effort) {
+                                    Ok(()) => self.provider.reasoning_effort(),
+                                    Err(error) => {
+                                        self.push_display_message(DisplayMessage::error(format!(
+                                            "Failed to apply reasoning effort '{}': {}",
+                                            effort, error
+                                        )));
+                                        None
+                                    }
+                                }
+                            };
+                            let effort_notice = match effective.as_deref() {
+                                Some(value) if value != effort => format!(
+                                    "effort {} → {}",
+                                    effort_display_label(&effort),
+                                    effort_display_label(value)
+                                ),
+                                Some(value) => {
+                                    format!("effort {}", effort_display_label(value))
+                                }
+                                None => format!(
+                                    "effort {} · provider default",
+                                    effort_display_label(&effort)
+                                ),
+                            };
+                            notice.push_str(" · ");
+                            notice.push_str(&effort_notice);
+                            let _ = self.session.save();
                         }
                         if !route_detail.is_empty() {
                             self.push_display_message(DisplayMessage::system(format!(
@@ -4095,19 +4140,20 @@ mod tests {
     }
 
     #[test]
-    fn route_effort_support_covers_effort_capable_runtimes_only() {
-        assert!(route_supports_reasoning_effort("claude-oauth"));
-        assert!(route_supports_reasoning_effort("claude-api"));
-        assert!(route_supports_reasoning_effort("openai-oauth"));
-        assert!(route_supports_reasoning_effort("openai-api-key"));
-        assert!(route_supports_reasoning_effort("openrouter"));
-
-        assert!(!route_supports_reasoning_effort("copilot"));
-        assert!(!route_supports_reasoning_effort("bedrock"));
-        assert!(!route_supports_reasoning_effort("https"));
-        assert!(!route_supports_reasoning_effort(
-            "openai-compatible:llamacpp"
-        ));
+    fn route_effort_support_covers_all_concrete_runtimes() {
+        for method in [
+            "claude-oauth",
+            "claude-api",
+            "openai-oauth",
+            "openai-api-key",
+            "openrouter",
+            "copilot",
+            "bedrock",
+            "https",
+            "openai-compatible:llamacpp",
+        ] {
+            assert!(route_supports_reasoning_effort(method), "{method}");
+        }
         assert!(!route_supports_reasoning_effort("remote-catalog"));
         assert!(!route_supports_reasoning_effort("current"));
     }

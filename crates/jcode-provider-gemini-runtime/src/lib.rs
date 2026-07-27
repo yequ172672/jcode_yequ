@@ -14,9 +14,10 @@ pub use jcode_provider_gemini::{
     AVAILABLE_MODELS, CODE_ASSIST_API_VERSION, CODE_ASSIST_ENDPOINT, ClientMetadata,
     CodeAssistGenerateRequest, CodeAssistGenerateResponse, DEFAULT_MODEL, GEMINI_API_ENDPOINT,
     GEMINI_API_VERSION, GeminiCandidate, GeminiContent, GeminiFunctionCall,
-    GeminiFunctionCallingConfig, GeminiFunctionDeclaration, GeminiFunctionResponse, GeminiPart,
-    GeminiPromptFeedback, GeminiRuntimeState, GeminiTool, GeminiToolConfig, GeminiUsageMetadata,
-    GeminiUserTier, IneligibleTier, InlineData, LoadCodeAssistRequest, LoadCodeAssistResponse,
+    GeminiFunctionCallingConfig, GeminiFunctionDeclaration, GeminiFunctionResponse,
+    GeminiGenerationConfig, GeminiPart, GeminiPromptFeedback, GeminiRuntimeState,
+    GeminiThinkingConfig, GeminiTool, GeminiToolConfig, GeminiUsageMetadata, GeminiUserTier,
+    IneligibleTier, InlineData, LoadCodeAssistRequest, LoadCodeAssistResponse,
     LongRunningOperationResponse, OnboardUserRequest, OnboardUserResponse, ProjectRef,
     USER_TIER_FREE, VertexGenerateContentRequest, VertexGenerateContentResponse, build_contents,
     build_system_instruction_with_tool_guard, build_tools, choose_onboard_tier, client_metadata,
@@ -44,6 +45,7 @@ pub struct GeminiProvider {
     model: Arc<RwLock<String>>,
     state: Arc<Mutex<Option<GeminiRuntimeState>>>,
     fetched_models: Arc<RwLock<Vec<String>>>,
+    reasoning_effort: Arc<RwLock<Option<String>>>,
 }
 
 /// How the Gemini provider authenticates to Google.
@@ -104,6 +106,7 @@ impl GeminiProvider {
             model: Arc::new(RwLock::new(model)),
             state: Arc::new(Mutex::new(None)),
             fetched_models: Arc::new(RwLock::new(Vec::new())),
+            reasoning_effort: Arc::new(RwLock::new(None)),
         };
         provider.seed_cached_catalog();
         provider
@@ -148,6 +151,64 @@ impl GeminiProvider {
             return GeminiAuthMode::ApiKey(api_key);
         }
         GeminiAuthMode::Oauth
+    }
+
+    fn reasoning_capability(model: &str) -> jcode_provider_core::ReasoningCapability {
+        use jcode_provider_core::ReasoningEffort::{High, Low, Medium, Minimal};
+
+        let model = model.trim().to_ascii_lowercase();
+        let efforts = if model.starts_with("gemini-3.6-flash")
+            || model.starts_with("gemini-3.5-flash")
+            || model.starts_with("gemini-3-flash")
+        {
+            vec![Minimal, Low, Medium, High]
+        } else if model.starts_with("gemini-3.1-pro")
+            || model.starts_with("gemini-2.5-pro")
+            || model.starts_with("gemini-2.5-flash")
+        {
+            vec![Low, Medium, High]
+        } else if model.starts_with("gemini-3-pro") {
+            vec![Low, High]
+        } else {
+            Vec::new()
+        };
+        jcode_provider_core::ReasoningCapability::new(efforts)
+    }
+
+    fn generation_config_for_effort(
+        model: &str,
+        effort: Option<&str>,
+    ) -> Option<GeminiGenerationConfig> {
+        let effort = effort.and_then(jcode_provider_core::parse_reasoning_effort)?;
+        let lower_model = model.trim().to_ascii_lowercase();
+        let thinking_config = if lower_model.starts_with("gemini-2.5-") {
+            let max_budget = if lower_model.starts_with("gemini-2.5-pro") {
+                32_768
+            } else {
+                24_576
+            };
+            let thinking_budget = match effort {
+                jcode_provider_core::ReasoningEffort::None => 0,
+                jcode_provider_core::ReasoningEffort::Minimal => 128,
+                jcode_provider_core::ReasoningEffort::Low => 1_024,
+                jcode_provider_core::ReasoningEffort::Medium => 8_192,
+                jcode_provider_core::ReasoningEffort::High
+                | jcode_provider_core::ReasoningEffort::XHigh
+                | jcode_provider_core::ReasoningEffort::Max => max_budget,
+            };
+            GeminiThinkingConfig {
+                thinking_level: None,
+                thinking_budget: Some(thinking_budget),
+            }
+        } else {
+            GeminiThinkingConfig {
+                thinking_level: Some(effort.as_str().to_string()),
+                thinking_budget: None,
+            }
+        };
+        Some(GeminiGenerationConfig {
+            thinking_config: Some(thinking_config),
+        })
     }
 
     async fn ensure_state(&self) -> Result<GeminiRuntimeState> {
@@ -531,6 +592,7 @@ impl GeminiProvider {
                         function_calling_config: GeminiFunctionCallingConfig { mode: "AUTO" },
                     })
                 },
+                generation_config: None,
                 session_id: Some(
                     resume_session_id
                         .filter(|value| !value.trim().is_empty())
@@ -584,6 +646,8 @@ impl GeminiProvider {
                 // without the `{ response: ... }` wrapper, so adapt both sides.
                 let mut inner = request.request;
                 inner.session_id = None;
+                inner.generation_config =
+                    Self::generation_config_for_effort(model, self.reasoning_effort().as_deref());
                 let url = format!(
                     "{}/models/{}:generateContent",
                     Self::developer_api_base_url(),
@@ -648,6 +712,7 @@ impl Provider for GeminiProvider {
                     model: provider.model.clone(),
                     state: state_cache.clone(),
                     fetched_models: provider.fetched_models.clone(),
+                    reasoning_effort: provider.reasoning_effort.clone(),
                 };
                 match provider.ensure_state().await {
                     Ok(state) => state,
@@ -954,6 +1019,56 @@ impl Provider for GeminiProvider {
         Ok(())
     }
 
+    fn reasoning_effort(&self) -> Option<String> {
+        if !matches!(Self::auth_mode(), GeminiAuthMode::ApiKey(_))
+            || Self::reasoning_capability(&self.model()).is_empty()
+        {
+            return None;
+        }
+        self.reasoning_effort
+            .read()
+            .map(|guard| guard.clone())
+            .unwrap_or_else(|poisoned| poisoned.into_inner().clone())
+    }
+
+    fn set_reasoning_effort(&self, effort: &str) -> Result<()> {
+        if !matches!(Self::auth_mode(), GeminiAuthMode::ApiKey(_)) {
+            anyhow::bail!("Gemini Code Assist OAuth does not expose a documented thinking control");
+        }
+        let requested = if jcode_base::prompt::is_swarm_effort(effort) {
+            "high"
+        } else {
+            effort
+        };
+        let capability = Self::reasoning_capability(&self.model());
+        let resolved = match jcode_provider_core::resolve_reasoning_effort(requested, &capability) {
+            jcode_provider_core::ReasoningResolution::Applied { resolved, .. } => {
+                resolved.as_str().to_string()
+            }
+            jcode_provider_core::ReasoningResolution::Unapplied { .. } => {
+                anyhow::bail!(
+                    "Gemini model '{}' has no documented thinking control",
+                    self.model()
+                )
+            }
+        };
+        *self
+            .reasoning_effort
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(resolved);
+        Ok(())
+    }
+
+    fn available_efforts(&self) -> Vec<&'static str> {
+        if matches!(Self::auth_mode(), GeminiAuthMode::ApiKey(_))
+            && !Self::reasoning_capability(&self.model()).is_empty()
+        {
+            jcode_provider_core::OPENAI_SELECTABLE_EFFORTS.to_vec()
+        } else {
+            Vec::new()
+        }
+    }
+
     fn available_models(&self) -> Vec<&'static str> {
         AVAILABLE_MODELS.to_vec()
     }
@@ -1009,6 +1124,7 @@ impl Provider for GeminiProvider {
             model: Arc::new(RwLock::new(self.model())),
             state: self.state.clone(),
             fetched_models: self.fetched_models.clone(),
+            reasoning_effort: Arc::new(RwLock::new(self.reasoning_effort())),
         })
     }
 
@@ -1025,6 +1141,7 @@ impl Clone for GeminiProvider {
             model: self.model.clone(),
             state: self.state.clone(),
             fetched_models: self.fetched_models.clone(),
+            reasoning_effort: self.reasoning_effort.clone(),
         }
     }
 }

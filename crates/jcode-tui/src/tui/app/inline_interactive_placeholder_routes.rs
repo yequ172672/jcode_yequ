@@ -28,27 +28,17 @@ where
         .all(|method| is_placeholder_route_method(method.as_ref()))
 }
 
-/// Whether a picker route's runtime can apply a per-request reasoning effort.
-/// Effort rows are only rendered for these routes; other routes (Copilot,
-/// Bedrock, Antigravity CLI, remote-catalog placeholders, ...) get one plain
-/// row per model because a picked effort could not actually be applied.
+/// Whether a picker route can carry the session's reasoning-effort preference.
+///
+/// The preference is intentionally available for every concrete runtime. The
+/// active provider resolves it to its supported wire value (or keeps it as an
+/// unapplied preference when the protocol has no control field). Placeholder
+/// catalog rows are the only exception because they are not selectable runtime
+/// identities and cannot safely persist a route-specific preference.
 pub(super) fn route_supports_reasoning_effort(api_method: &str) -> bool {
     use crate::provider::ModelRouteApiMethod as Method;
-    match Method::parse(api_method) {
-        Method::ClaudeOAuth
-        | Method::AnthropicApiKey
-        | Method::OpenAIOAuth
-        | Method::OpenAIApiKey
-        | Method::OpenRouter => true,
-        Method::JcodeSubscription
-        | Method::OpenAiCompatible { .. }
-        | Method::Copilot
-        | Method::Cursor
-        | Method::Bedrock
-        | Method::CodeAssistOAuth
-        | Method::AntigravityHttps
-        | Method::RemoteCatalog
-        | Method::Current
-        | Method::Other(_) => false,
-    }
+    !matches!(
+        Method::parse(api_method),
+        Method::RemoteCatalog | Method::Current
+    )
 }

@@ -70,93 +70,22 @@ fn partition_queued_messages_moves_system_messages_into_reminders() {
 }
 
 #[test]
-fn inferred_reasoning_efforts_use_provider_specific_order_and_max_semantics() {
-    assert_eq!(
-        inferred_reasoning_efforts(Some("openai"), Some("gpt-5.4")),
-        vec![
-            "none",
-            "minimal",
-            "low",
-            "medium",
-            "high",
-            "xhigh",
-            "max",
-            "swarm",
-            "swarm-deep"
-        ],
-        "OpenAI exposes max as a real Responses API effort level"
-    );
-    assert_eq!(
-        inferred_reasoning_efforts(Some("openai-compatible:custom"), Some("o5-mini")),
-        jcode_provider_core::OPENAI_SELECTABLE_EFFORTS,
-        "direct compatible routes must preserve OpenAI max instead of aliasing it to xhigh"
-    );
-    assert_eq!(
-        inferred_reasoning_efforts(Some("anthropic"), Some("claude-sonnet-4-6")),
-        vec![
-            "none",
-            "low",
-            "medium",
-            "high",
-            "max",
-            "swarm",
-            "swarm-deep"
-        ]
-    );
-    assert_eq!(
-        inferred_reasoning_efforts(Some("anthropic"), Some("claude-opus-4-7")),
-        vec![
-            "none",
-            "low",
-            "medium",
-            "high",
-            "xhigh",
-            "max",
-            "swarm",
-            "swarm-deep"
-        ]
-    );
-    assert_eq!(
-        inferred_reasoning_efforts(Some("openrouter"), Some("anthropic/claude-sonnet-4.6")),
-        vec![
-            "none",
-            "minimal",
-            "low",
-            "medium",
-            "high",
-            "xhigh",
-            "swarm",
-            "swarm-deep"
-        ]
-    );
-    assert_eq!(
-        inferred_reasoning_efforts(Some("openrouter"), Some("deepseek/deepseek-r1")),
-        vec![
-            "none",
-            "minimal",
-            "low",
-            "medium",
-            "high",
-            "xhigh",
-            "swarm",
-            "swarm-deep"
-        ],
-        "OpenRouter uses unified reasoning where max is only an alias, not a cycle level"
-    );
-    assert_eq!(
-        inferred_reasoning_efforts(Some("deepseek"), Some("deepseek-v4-pro")),
-        vec![
-            "none",
-            "low",
-            "medium",
-            "high",
-            "max",
-            "swarm",
-            "swarm-deep"
-        ],
-        "DeepSeek direct keeps max as a real provider level"
-    );
-    assert!(inferred_reasoning_efforts(Some("ollama"), Some("llama3")).is_empty());
+fn inferred_reasoning_efforts_expose_a_universal_preference_ladder() {
+    for (provider, model) in [
+        ("openai", "gpt-5.4"),
+        ("openai-compatible:custom", "o5-mini"),
+        ("anthropic", "claude-sonnet-4-6"),
+        ("openrouter", "deepseek/deepseek-r1"),
+        ("opencode-go", "provider/model"),
+        ("ollama", "llama3"),
+    ] {
+        assert_eq!(
+            inferred_reasoning_efforts(Some(provider), Some(model)),
+            jcode_provider_core::OPENAI_SELECTABLE_EFFORTS,
+            "{provider}/{model} should expose the durable preference ladder"
+        );
+    }
+    assert!(inferred_reasoning_efforts(None, None).is_empty());
 }
 
 #[test]

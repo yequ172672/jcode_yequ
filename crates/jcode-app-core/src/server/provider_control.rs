@@ -777,7 +777,9 @@ pub(super) async fn handle_set_reasoning_effort(
     client_event_tx: &mpsc::UnboundedSender<ServerEvent>,
 ) {
     let result = if let Ok(mut agent_guard) = agent.try_lock() {
-        agent_guard.set_reasoning_effort(&effort)
+        agent_guard
+            .set_reasoning_effort(&effort)
+            .map(|effective| (agent_guard.reasoning_effort_preference(), effective))
     } else {
         spawn_deferred_reasoning_effort_change(
             id,
@@ -793,13 +795,14 @@ pub(super) async fn handle_set_reasoning_effort(
 
 fn send_reasoning_effort_result(
     id: u64,
-    result: anyhow::Result<Option<String>>,
+    result: anyhow::Result<(Option<String>, Option<String>)>,
     client_event_tx: &mpsc::UnboundedSender<ServerEvent>,
 ) {
     match result {
-        Ok(effort) => {
+        Ok((requested_effort, effort)) => {
             let _ = client_event_tx.send(ServerEvent::ReasoningEffortChanged {
                 id,
+                requested_effort,
                 effort,
                 error: None,
             });
@@ -807,6 +810,7 @@ fn send_reasoning_effort_result(
         Err(e) => {
             let _ = client_event_tx.send(ServerEvent::ReasoningEffortChanged {
                 id,
+                requested_effort: None,
                 effort: None,
                 error: Some(e.to_string()),
             });
@@ -824,7 +828,9 @@ fn spawn_deferred_reasoning_effort_change(
     tokio::spawn(async move {
         let mut agent_guard = agent.lock().await;
         log_provider_control_lock_acquired("set_reasoning_effort", id, queued_at);
-        let result = agent_guard.set_reasoning_effort(&effort);
+        let result = agent_guard
+            .set_reasoning_effort(&effort)
+            .map(|effective| (agent_guard.reasoning_effort_preference(), effective));
         crate::logging::info(&format!(
             "Deferred reasoning effort change completed request_id={} requested={} success={}",
             id,
@@ -1439,7 +1445,12 @@ mod tests {
         }
 
         fn set_reasoning_effort(&self, effort: &str) -> anyhow::Result<()> {
-            *self.effort.lock().expect("effort lock") = Some(effort.to_string());
+            let effective = if crate::prompt::is_swarm_effort(effort) {
+                "max"
+            } else {
+                effort
+            };
+            *self.effort.lock().expect("effort lock") = Some(effective.to_string());
             Ok(())
         }
 
@@ -1523,10 +1534,33 @@ mod tests {
             event,
             Some(ServerEvent::ReasoningEffortChanged {
                 id: 7,
+                requested_effort: Some(requested),
                 effort: Some(effort),
                 error: None,
-            }) if effort == "low"
+            }) if requested == "low" && effort == "low"
         ));
+    }
+
+    #[tokio::test]
+    async fn swarm_deep_preference_survives_provider_resolution_in_side_table() {
+        let _guard = crate::storage::lock_test_env();
+        let _runtime = IsolatedRuntimeDir::new();
+        let session_id = "session_swarm_deep_reasoning_effort";
+        let (provider, agent, _, _) = test_agent(session_id).await;
+
+        let effective = agent
+            .lock()
+            .await
+            .set_reasoning_effort("swarm-deep")
+            .expect("swarm-deep preference should apply");
+
+        assert_eq!(effective.as_deref(), Some("max"));
+        assert_eq!(provider.reasoning_effort().as_deref(), Some("max"));
+        assert_eq!(
+            crate::session_effort::session_effort(session_id).as_deref(),
+            Some("swarm-deep")
+        );
+        crate::session_effort::forget_session_effort(session_id);
     }
 
     #[tokio::test]

@@ -30,6 +30,50 @@ fn test_handle_server_event_service_tier_changed_mentions_next_request_when_stre
 }
 
 #[test]
+fn test_reasoning_effort_confirmation_commits_only_after_success() {
+    let _guard = crate::storage::lock_test_env();
+    let temp = tempfile::TempDir::new().expect("create temp dir");
+    let prev_runtime = std::env::var_os("JCODE_RUNTIME_DIR");
+    crate::env::set_var("JCODE_RUNTIME_DIR", temp.path());
+    let mut app = create_test_app();
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let _runtime = rt.enter();
+    let mut remote = crate::tui::backend::RemoteConnection::dummy();
+    app.session.reasoning_effort = Some("low".to_string());
+    app.remote_reasoning_effort = Some("low".to_string());
+
+    app.handle_server_event(
+        crate::protocol::ServerEvent::ReasoningEffortChanged {
+            id: 8,
+            requested_effort: Some("max".to_string()),
+            effort: None,
+            error: Some("provider rejected max".to_string()),
+        },
+        &mut remote,
+    );
+    assert_eq!(app.session.reasoning_effort.as_deref(), Some("low"));
+    assert_eq!(app.remote_reasoning_effort.as_deref(), Some("low"));
+
+    app.handle_server_event(
+        crate::protocol::ServerEvent::ReasoningEffortChanged {
+            id: 9,
+            requested_effort: Some("max".to_string()),
+            effort: Some("high".to_string()),
+            error: None,
+        },
+        &mut remote,
+    );
+    assert_eq!(app.session.reasoning_effort.as_deref(), Some("max"));
+    assert_eq!(app.remote_reasoning_effort.as_deref(), Some("high"));
+
+    if let Some(prev_runtime) = prev_runtime {
+        crate::env::set_var("JCODE_RUNTIME_DIR", prev_runtime);
+    } else {
+        crate::env::remove_var("JCODE_RUNTIME_DIR");
+    }
+}
+
+#[test]
 fn test_reload_handoff_active_when_server_reload_flag_set() {
     let _guard = crate::storage::lock_test_env();
     let temp = tempfile::TempDir::new().expect("create temp dir");
@@ -165,6 +209,7 @@ fn test_handle_server_event_history_with_interruption_queues_continuation() {
             upstream_provider: None,
             resolved_credential: None,
             reasoning_effort: None,
+            requested_reasoning_effort: None,
             service_tier: None,
             compaction_mode: crate::config::CompactionMode::Reactive,
             activity: None,
@@ -241,6 +286,7 @@ fn test_handle_server_event_history_uses_server_owned_reload_recovery_directive(
         upstream_provider: None,
         resolved_credential: None,
         reasoning_effort: None,
+        requested_reasoning_effort: None,
         service_tier: None,
         compaction_mode: crate::config::CompactionMode::Reactive,
         activity: None,
@@ -319,6 +365,7 @@ fn test_handle_server_event_history_without_interruption_does_not_queue() {
             upstream_provider: None,
             resolved_credential: None,
             reasoning_effort: None,
+            requested_reasoning_effort: None,
             service_tier: None,
             compaction_mode: crate::config::CompactionMode::Reactive,
             activity: None,
@@ -382,6 +429,7 @@ fn test_handle_server_event_history_after_reload_reports_no_continuation_needed(
             upstream_provider: None,
             resolved_credential: None,
             reasoning_effort: None,
+            requested_reasoning_effort: None,
             service_tier: None,
             compaction_mode: crate::config::CompactionMode::Reactive,
             activity: None,
@@ -683,6 +731,7 @@ fn test_handle_server_event_history_restores_side_panel_snapshot() {
             upstream_provider: None,
             resolved_credential: None,
             reasoning_effort: None,
+            requested_reasoning_effort: None,
             service_tier: None,
             compaction_mode: crate::config::CompactionMode::Reactive,
             activity: None,
@@ -740,6 +789,7 @@ fn test_handle_server_event_history_restores_active_resume_processing_state() {
             upstream_provider: None,
             resolved_credential: None,
             reasoning_effort: None,
+            requested_reasoning_effort: None,
             service_tier: None,
             compaction_mode: crate::config::CompactionMode::Reactive,
             activity: Some(crate::protocol::SessionActivitySnapshot {

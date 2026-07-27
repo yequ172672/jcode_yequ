@@ -104,9 +104,11 @@ fn test_anthropic_reasoning_effort_request_parts() {
     let provider = AnthropicProvider::new();
     provider.set_model("claude-sonnet-4-6").unwrap();
     provider.set_reasoning_effort("none").unwrap();
-    assert!(
-        provider.set_reasoning_effort("minimal").is_err(),
-        "Anthropic must reject rather than silently promote minimal to max"
+    provider.set_reasoning_effort("minimal").unwrap();
+    assert_eq!(
+        provider.reasoning_effort().as_deref(),
+        Some("low"),
+        "minimal should resolve to the model's lowest supported effort"
     );
 
     assert_eq!(
@@ -121,14 +123,15 @@ fn test_anthropic_reasoning_effort_request_parts() {
             "swarm-deep"
         ]
     );
-    assert_eq!(provider.reasoning_effort().as_deref(), Some("none"));
+    assert_eq!(provider.reasoning_effort().as_deref(), Some("low"));
 
     // Sonnet 4.6 supports the real `max` API level (but not `xhigh`).
     provider.set_reasoning_effort("max").unwrap();
     assert_eq!(provider.reasoning_effort().as_deref(), Some("max"));
 
-    // `xhigh` is rejected on models that do not support it.
-    assert!(provider.set_reasoning_effort("xhigh").is_err());
+    // `xhigh` falls back to the strongest supported value at or below it.
+    provider.set_reasoning_effort("xhigh").unwrap();
+    assert_eq!(provider.reasoning_effort().as_deref(), Some("high"));
 
     provider.set_reasoning_effort("medium").unwrap();
     let (thinking, output_config, temperature) =

@@ -32,18 +32,25 @@ pub(super) async fn run_stream_with_retries(
     api_base: String,
     auth: ProviderAuth,
     send_openrouter_headers: bool,
-    request: Value,
+    mut request: Value,
     tx: mpsc::Sender<Result<StreamEvent>>,
     provider_pin: Arc<Mutex<Option<ProviderPin>>>,
     model: String,
+    allow_generated_reasoning_fallback: bool,
+    reasoning_fallback_ladder: &'static [&'static str],
+    effective_reasoning_effort: Option<Arc<RwLock<Option<String>>>>,
 ) {
-    let mut last_error = None;
     let mut next_retry_delay = None;
+    let mut transport_attempt = 1u32;
+    let mut request_attempt = 0u32;
+    let mut effort_fallbacks = 0usize;
+    let mut delay_before_retry = false;
 
-    for attempt in 0..MAX_RETRIES {
-        if attempt > 0 {
+    loop {
+        request_attempt += 1;
+        if delay_before_retry {
             let delay = jcode_provider_core::retry_after::retry_delay(
-                attempt,
+                transport_attempt.saturating_sub(1),
                 RETRY_BASE_DELAY_MS,
                 next_retry_delay.take(),
             );
@@ -51,15 +58,15 @@ pub(super) async fn run_stream_with_retries(
             jcode_base::logging::info(&format!(
                 "Retrying API request using {} (attempt {}/{})",
                 auth.label(),
-                attempt + 1,
+                transport_attempt,
                 MAX_RETRIES
             ));
         }
+        delay_before_retry = false;
 
         jcode_base::logging::info(&format!(
-            "API stream attempt {}/{} over HTTPS transport (model: {}, endpoint: {}, auth: {})",
-            attempt + 1,
-            MAX_RETRIES,
+            "API stream request attempt {} over HTTPS transport (model: {}, endpoint: {}, auth: {})",
+            request_attempt,
             model,
             api_base,
             auth.label()
@@ -76,7 +83,7 @@ pub(super) async fn run_stream_with_retries(
         // poisoned other idle pooled connections opened through the same path,
         // so reusing the shared pool can fail identically. A fresh client
         // guarantees a brand-new TCP+TLS connection.
-        let attempt_client = if attempt == 0 {
+        let attempt_client = if request_attempt == 1 {
             client.clone()
         } else {
             jcode_provider_core::fresh_transport_client()
@@ -96,6 +103,10 @@ pub(super) async fn run_stream_with_retries(
         {
             Ok(()) => {
                 let _ = attempt_guard.finish().await;
+                if let Some(state) = effective_reasoning_effort.as_ref() {
+                    let effective = request_reasoning_effort(&request).map(str::to_string);
+                    *state.write().await = effective;
+                }
                 return;
             }
             Err(e) => {
@@ -103,7 +114,25 @@ pub(super) async fn run_stream_with_retries(
                 // Full anyhow chain ({:#}) so a `.context(...)`-wrapped transport
                 // cause (e.g. TLS BadRecordMac) is visible to the classifier.
                 let error_str = format!("{e:#}").to_lowercase();
-                if is_retryable_error(&error_str) && attempt + 1 < MAX_RETRIES {
+                if allow_generated_reasoning_fallback
+                    && !saw_output
+                    && effort_fallbacks < reasoning_fallback_ladder.len()
+                    && let Some(fallback) = fallback_rejected_reasoning_request(
+                        &mut request,
+                        &error_str,
+                        reasoning_fallback_ladder,
+                    )
+                {
+                    effort_fallbacks += 1;
+                    let _ = tx
+                        .send(Ok(StreamEvent::StatusDetail {
+                            detail: fallback.status_detail(&model),
+                        }))
+                        .await;
+                    continue;
+                }
+                if is_retryable_error(&error_str) && transport_attempt < MAX_RETRIES {
+                    transport_attempt += 1;
                     if saw_output {
                         // Partial output already reached the consumer; tell it
                         // to discard the partial attempt so the retried
@@ -114,7 +143,7 @@ pub(super) async fn run_stream_with_retries(
                         ));
                         let _ = tx
                             .send(Ok(StreamEvent::RetryRollback {
-                                attempt: attempt + 2,
+                                attempt: transport_attempt,
                                 max: MAX_RETRIES,
                             }))
                             .await;
@@ -125,7 +154,7 @@ pub(super) async fn run_stream_with_retries(
                         ));
                     }
                     next_retry_delay = jcode_provider_core::retry_after::retry_after_from_error(&e);
-                    last_error = Some(e);
+                    delay_before_retry = true;
                     continue;
                 }
 
@@ -134,16 +163,100 @@ pub(super) async fn run_stream_with_retries(
             }
         }
     }
+}
 
-    if let Some(e) = last_error {
-        let _ = tx
-            .send(Err(anyhow::anyhow!(
-                "Failed after {} retries: {}",
-                MAX_RETRIES,
-                e
-            )))
-            .await;
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum ReasoningFallback {
+    Downgraded { from: String, to: String },
+    Removed { from: String },
+}
+
+impl ReasoningFallback {
+    fn status_detail(&self, model: &str) -> String {
+        match self {
+            Self::Downgraded { from, to } => {
+                format!("Reasoning effort fallback for {model}: {from} → {to}")
+            }
+            Self::Removed { from } => format!(
+                "Reasoning effort '{from}' is not accepted by {model}; using provider default"
+            ),
+        }
     }
+}
+
+fn request_reasoning_effort(request: &Value) -> Option<&str> {
+    request
+        .get("reasoning_effort")
+        .and_then(Value::as_str)
+        .or_else(|| {
+            request
+                .get("reasoning")
+                .and_then(|value| value.get("effort"))
+                .and_then(Value::as_str)
+        })
+}
+
+fn fallback_rejected_reasoning_request(
+    request: &mut Value,
+    error: &str,
+    supported_efforts: &[&str],
+) -> Option<ReasoningFallback> {
+    let status = parsed_http_status(error)?;
+    if !matches!(status, 400 | 422)
+        || !(error.contains("reasoning_effort") || error.contains("reasoning"))
+    {
+        return None;
+    }
+
+    let field_is_rejected = [
+        "unknown field",
+        "unknown parameter",
+        "unrecognized",
+        "unexpected field",
+        "extra inputs",
+        "not permitted",
+        "unsupported parameter",
+    ]
+    .iter()
+    .any(|marker| error.contains(marker));
+    let value_is_rejected = field_is_rejected
+        || [
+            "invalid value",
+            "unsupported value",
+            "not supported",
+            "must be one of",
+            "allowed values",
+        ]
+        .iter()
+        .any(|marker| error.contains(marker));
+    if !value_is_rejected {
+        return None;
+    }
+
+    let current = request_reasoning_effort(request)?.to_string();
+    if !field_is_rejected
+        && let Some(parsed) = jcode_provider_core::parse_reasoning_effort(&current)
+        && let Some(next) = supported_efforts.iter().rev().copied().find(|candidate| {
+            jcode_provider_core::parse_reasoning_effort(candidate)
+                .is_some_and(|candidate| candidate < parsed && candidate.as_str() != "none")
+        })
+    {
+        if request.get("reasoning_effort").is_some() {
+            request["reasoning_effort"] = serde_json::json!(next);
+        } else if request.get("reasoning").is_some() {
+            request["reasoning"]["effort"] = serde_json::json!(next);
+        }
+        return Some(ReasoningFallback::Downgraded {
+            from: current,
+            to: next.to_string(),
+        });
+    }
+
+    if let Some(object) = request.as_object_mut() {
+        object.remove("reasoning_effort");
+        object.remove("reasoning");
+    }
+    Some(ReasoningFallback::Removed { from: current })
 }
 
 #[expect(
@@ -389,5 +502,94 @@ mod tests {
         assert!(is_retryable_error(
             "chat request failed\n  status: 429 unknown\n  response: {}"
         ));
+    }
+
+    #[test]
+    fn rejected_reasoning_value_steps_down_without_touching_other_fields() {
+        let mut request = serde_json::json!({
+            "model": "gpt-test",
+            "reasoning_effort": "max",
+            "messages": [{"role": "user", "content": "hi"}],
+        });
+
+        let fallback = fallback_rejected_reasoning_request(
+            &mut request,
+            "status: 400 bad request: reasoning_effort has an unsupported value",
+            jcode_provider_core::OPENAI_SELECTABLE_EFFORTS,
+        );
+
+        assert_eq!(
+            fallback,
+            Some(ReasoningFallback::Downgraded {
+                from: "max".to_string(),
+                to: "xhigh".to_string(),
+            })
+        );
+        assert_eq!(request["reasoning_effort"], "xhigh");
+        assert_eq!(request["model"], "gpt-test");
+        assert!(request.get("messages").is_some());
+    }
+
+    #[test]
+    fn rejected_reasoning_field_is_removed_for_provider_default() {
+        let mut request = serde_json::json!({
+            "model": "custom-model",
+            "reasoning_effort": "high",
+        });
+
+        let fallback = fallback_rejected_reasoning_request(
+            &mut request,
+            "status: 422 unprocessable entity: unknown parameter reasoning_effort",
+            jcode_provider_core::OPENAI_SELECTABLE_EFFORTS,
+        );
+
+        assert_eq!(
+            fallback,
+            Some(ReasoningFallback::Removed {
+                from: "high".to_string(),
+            })
+        );
+        assert!(request.get("reasoning_effort").is_none());
+        assert_eq!(request["model"], "custom-model");
+    }
+
+    #[test]
+    fn unrelated_client_errors_do_not_trigger_reasoning_fallback() {
+        let mut request = serde_json::json!({
+            "model": "gpt-test",
+            "reasoning_effort": "high",
+        });
+
+        assert_eq!(
+            fallback_rejected_reasoning_request(
+                &mut request,
+                "status: 400 bad request: messages are required",
+                jcode_provider_core::OPENAI_SELECTABLE_EFFORTS,
+            ),
+            None
+        );
+        assert_eq!(request["reasoning_effort"], "high");
+    }
+
+    #[test]
+    fn deepseek_fallback_uses_only_deepseek_effort_levels() {
+        let mut request = serde_json::json!({
+            "model": "deepseek-test",
+            "reasoning_effort": "low",
+        });
+
+        let fallback = fallback_rejected_reasoning_request(
+            &mut request,
+            "status: 400 bad request: reasoning_effort has an unsupported value",
+            jcode_provider_core::DEEPSEEK_SELECTABLE_EFFORTS,
+        );
+
+        assert_eq!(
+            fallback,
+            Some(ReasoningFallback::Removed {
+                from: "low".to_string(),
+            })
+        );
+        assert!(request.get("reasoning_effort").is_none());
     }
 }

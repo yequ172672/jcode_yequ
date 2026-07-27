@@ -986,6 +986,8 @@ fn forward_pending_reasoning_effort_sends_effort_request_to_server() {
 
     let mut app = create_test_app();
     app.is_remote = true;
+    app.session.reasoning_effort = Some("low".to_string());
+    app.remote_reasoning_effort = Some("low".to_string());
     app.pending_reasoning_effort = Some("high".to_string());
 
     let rt = tokio::runtime::Runtime::new().expect("runtime");
@@ -1022,9 +1024,10 @@ fn forward_pending_reasoning_effort_sends_effort_request_to_server() {
     );
     assert_eq!(
         app.remote_reasoning_effort.as_deref(),
-        Some("high"),
-        "requested effort should be tracked optimistically for the UI"
+        Some("low"),
+        "effective effort must stay unchanged until the server confirms"
     );
+    assert_eq!(app.session.reasoning_effort.as_deref(), Some("low"));
 }
 
 /// The dispatcher must be a no-op when no effort variant was staged (plain

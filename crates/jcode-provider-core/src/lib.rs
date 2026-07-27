@@ -48,7 +48,9 @@ pub use models::{
 };
 pub use reasoning::{
     DEEPSEEK_SELECTABLE_EFFORTS, OPENAI_SELECTABLE_EFFORTS, OPENROUTER_SELECTABLE_EFFORTS,
-    canonical_reasoning_effort, inferred_reasoning_efforts,
+    ReasoningCapability, ReasoningEffort, ReasoningResolution, ReasoningResolutionReason,
+    WIRE_REASONING_EFFORTS, canonical_reasoning_effort, inferred_reasoning_efforts,
+    parse_reasoning_effort, resolve_reasoning_effort,
 };
 pub use selection::{
     ActiveProvider, ProviderAvailability, auto_default_provider, cli_provider_arg_for_session_key,

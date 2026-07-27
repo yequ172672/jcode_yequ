@@ -560,6 +560,7 @@ fn history_event_for_session(session_id: &str) -> crate::protocol::ServerEvent {
         upstream_provider: None,
         resolved_credential: None,
         reasoning_effort: None,
+        requested_reasoning_effort: None,
         service_tier: None,
         compaction_mode: crate::config::CompactionMode::Reactive,
         activity: None,

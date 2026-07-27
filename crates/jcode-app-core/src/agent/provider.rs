@@ -1,5 +1,19 @@
 use super::*;
 
+fn normalize_reasoning_preference(effort: &str) -> anyhow::Result<String> {
+    let normalized = effort.trim().to_ascii_lowercase();
+    if let Some(canonical) = jcode_provider_core::canonical_reasoning_effort(&normalized) {
+        Ok(canonical.to_string())
+    } else if crate::prompt::is_swarm_effort(&normalized) {
+        Ok(normalized)
+    } else {
+        anyhow::bail!(
+            "Unsupported reasoning effort '{}'; expected none|minimal|low|medium|high|xhigh|max|swarm|swarm-deep",
+            effort
+        )
+    }
+}
+
 impl Agent {
     pub fn set_premium_mode(&self, mode: crate::provider::copilot::PremiumMode) {
         self.provider.set_premium_mode(mode);
@@ -98,6 +112,7 @@ impl Agent {
         self.session.provider_key = Some(selection.runtime_key.stable_id());
         self.session.route_api_method = Some(selection.api_method.clone());
         self.session.model = Some(resolved_model.clone());
+        self.reapply_reasoning_effort_preference();
         let event = crate::provider::ProviderStateEvent::selected_model(source, resolved_model);
         self.provider_runtime_state.apply(event);
         self.persist_session_best_effort("route selection");
@@ -126,6 +141,7 @@ impl Agent {
                 self.session.provider_key.as_deref(),
             );
         self.session.model = Some(resolved_model.clone());
+        self.reapply_reasoning_effort_preference();
         let event = crate::provider::ProviderStateEvent::selected_model(source, resolved_model);
         self.provider_runtime_state.apply(event);
         self.persist_session_best_effort("model selection");
@@ -142,34 +158,80 @@ impl Agent {
     }
 
     pub fn restore_reasoning_effort_from_session(&mut self) {
-        if let Some(effort) = self.session.reasoning_effort.clone() {
-            if let Err(e) = self.provider.set_reasoning_effort(&effort) {
-                crate::logging::error(&format!(
-                    "Failed to restore session reasoning effort '{}': {}",
-                    effort, e
-                ));
-            }
+        if self.session.reasoning_effort.is_some() {
+            self.reapply_reasoning_effort_preference();
         } else {
             self.session.reasoning_effort = self.provider.reasoning_effort();
         }
         // Mirror the effort into the deadlock-free side-table so server handlers
         // (e.g. the swarm seed handler) can learn this session's effort without
         // taking the agent lock.
-        crate::session_effort::record_session_effort(
-            &self.session.id,
-            self.session.reasoning_effort.as_deref(),
-        );
+        let effective = self.provider.reasoning_effort();
+        let recorded = self
+            .session
+            .reasoning_effort
+            .as_deref()
+            .filter(|effort| crate::prompt::is_swarm_effort(effort))
+            .or(effective.as_deref());
+        crate::session_effort::record_session_effort(&self.session.id, recorded);
     }
 
     pub fn set_reasoning_effort(&mut self, effort: &str) -> Result<Option<String>> {
-        self.provider.set_reasoning_effort(effort)?;
+        let requested = normalize_reasoning_preference(effort)?;
+
+        // `Session::reasoning_effort` is the durable user preference. The
+        // provider owns the effective value after model-specific resolution.
+        // Keeping these separate lets `max` temporarily resolve to `high` and
+        // automatically return to `max` when the user switches to a stronger
+        // model later.
+        let advertised = self.provider.available_efforts();
+        if let Err(error) = self.provider.set_reasoning_effort(&requested) {
+            if !advertised.is_empty() {
+                return Err(error);
+            }
+            crate::logging::info(&format!(
+                "Reasoning effort preference '{}' is durable but unapplied for model '{}': {}",
+                requested,
+                self.provider.model(),
+                error
+            ));
+        }
+        self.session.reasoning_effort = Some(requested.clone());
         let current = self.provider.reasoning_effort();
-        self.session.reasoning_effort = current.clone();
         // Keep the side-table in sync (see `restore_reasoning_effort_from_session`).
-        crate::session_effort::record_session_effort(&self.session.id, current.as_deref());
+        let recorded = crate::prompt::is_swarm_effort(&requested)
+            .then_some(requested.as_str())
+            .or(current.as_deref());
+        crate::session_effort::record_session_effort(&self.session.id, recorded);
         self.log_env_snapshot("set_reasoning_effort");
         self.session.save()?;
         Ok(current)
+    }
+
+    fn reapply_reasoning_effort_preference(&self) {
+        let Some(preference) = self.session.reasoning_effort.as_deref() else {
+            return;
+        };
+        let advertised = self.provider.available_efforts();
+        if let Err(error) = self.provider.set_reasoning_effort(preference) {
+            if !advertised.is_empty() {
+                crate::logging::warn(&format!(
+                    "Could not apply reasoning effort preference '{}' to model '{}': {}",
+                    preference,
+                    self.provider.model(),
+                    error
+                ));
+            }
+        }
+        let effective = self.provider.reasoning_effort();
+        let recorded = crate::prompt::is_swarm_effort(preference)
+            .then_some(preference)
+            .or(effective.as_deref());
+        crate::session_effort::record_session_effort(&self.session.id, recorded);
+    }
+
+    pub fn reasoning_effort_preference(&self) -> Option<String> {
+        self.session.reasoning_effort.clone()
     }
 
     pub fn subagent_model(&self) -> Option<String> {
@@ -254,5 +316,22 @@ impl Agent {
     /// Get the stored messages (for transcript export)
     pub fn messages(&self) -> &[StoredMessage] {
         &self.session.messages
+    }
+}
+
+#[cfg(test)]
+mod reasoning_preference_tests {
+    use super::normalize_reasoning_preference;
+
+    #[test]
+    fn aliases_are_canonicalized_before_session_persistence() {
+        assert_eq!(normalize_reasoning_preference(" MIN ").unwrap(), "minimal");
+        assert_eq!(normalize_reasoning_preference("off").unwrap(), "none");
+        assert_eq!(normalize_reasoning_preference("maximum").unwrap(), "max");
+        assert_eq!(
+            normalize_reasoning_preference("swarm-deep").unwrap(),
+            "swarm-deep"
+        );
+        assert!(normalize_reasoning_preference("turbo").is_err());
     }
 }

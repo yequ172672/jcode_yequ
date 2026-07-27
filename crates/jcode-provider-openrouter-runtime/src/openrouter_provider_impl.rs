@@ -123,8 +123,11 @@ impl Provider for OpenRouterProvider {
             request["max_tokens"] = serde_json::json!(max_tokens);
         }
 
+        let explicit_reasoning = self.extra_body.as_ref().is_some_and(|extra| {
+            extra.contains_key("reasoning") || extra.contains_key("reasoning_effort")
+        });
         let mut sent_reasoning_config = false;
-        if let Some(effort) = reasoning_effort.as_deref() {
+        if !explicit_reasoning && let Some(effort) = reasoning_effort.as_deref() {
             if self.supports_deepseek_reasoning_effort() {
                 // The `swarm` sentinel maps to the strongest real effort.
                 let effort = if jcode_base::prompt::is_swarm_effort(effort) {
@@ -132,10 +135,8 @@ impl Provider for OpenRouterProvider {
                 } else {
                     effort
                 };
-                if effort != "none" {
-                    request["reasoning_effort"] = serde_json::json!(effort);
-                    sent_reasoning_config = true;
-                }
+                request["reasoning_effort"] = serde_json::json!(effort);
+                sent_reasoning_config = true;
             } else if self.supports_openai_reasoning_effort() {
                 // GPT-family models on direct compat gateways (e.g. OpenCode
                 // Zen serving gpt-5.3-codex-spark) take the standard OpenAI
@@ -145,10 +146,8 @@ impl Provider for OpenRouterProvider {
                 } else {
                     effort
                 };
-                if effort != "none" {
-                    request["reasoning_effort"] = serde_json::json!(effort);
-                    sent_reasoning_config = true;
-                }
+                request["reasoning_effort"] = serde_json::json!(effort);
+                sent_reasoning_config = true;
             } else if Self::profile_supports_unified_reasoning(
                 self.profile_id.as_deref(),
                 self.send_openrouter_headers,
@@ -178,6 +177,7 @@ impl Provider for OpenRouterProvider {
         // the non-standard top-level `thinking` field with a 422 (issue #261).
         if let Some(enable) = thinking_enabled
             && !sent_reasoning_config
+            && !explicit_reasoning
             && !strict_openai_schema
         {
             request["thinking"] = serde_json::json!({
@@ -237,6 +237,17 @@ impl Provider for OpenRouterProvider {
                 request_obj.insert(key.clone(), value.clone());
             }
         }
+        let allow_generated_reasoning_fallback = sent_reasoning_config;
+        let reasoning_fallback_ladder = if self.supports_deepseek_reasoning_effort() {
+            jcode_provider_core::DEEPSEEK_SELECTABLE_EFFORTS
+        } else if OpenRouterProvider::profile_supports_unified_reasoning(
+            self.profile_id.as_deref(),
+            self.send_openrouter_headers,
+        ) {
+            jcode_provider_core::OPENROUTER_SELECTABLE_EFFORTS
+        } else {
+            jcode_provider_core::OPENAI_SELECTABLE_EFFORTS
+        };
 
         let message_items = request
             .get("messages")
@@ -288,6 +299,9 @@ impl Provider for OpenRouterProvider {
         let request_for_retries = request;
         let model_for_stream = model.clone();
         let provider_pin = Arc::clone(&self.provider_pin);
+        let effective_reasoning_effort = (reasoning_effort.is_some()
+            && allow_generated_reasoning_fallback)
+            .then(|| Arc::clone(&self.reasoning_effort));
 
         tokio::spawn(async move {
             if tx
@@ -308,6 +322,9 @@ impl Provider for OpenRouterProvider {
                 tx,
                 provider_pin,
                 model_for_stream,
+                allow_generated_reasoning_fallback,
+                reasoning_fallback_ladder,
+                effective_reasoning_effort,
             )
             .await;
         });
@@ -446,21 +463,56 @@ impl Provider for OpenRouterProvider {
             );
         }
         let requested = effort.trim().to_ascii_lowercase();
-        let mut accepted = self.available_efforts().contains(&requested.as_str());
-        if !self.supports_deepseek_reasoning_effort()
-            && !self.supports_openai_reasoning_effort()
-            && requested == "max"
-        {
-            accepted = true;
+        if requested.is_empty() {
+            let mut current = self.reasoning_effort.try_write().map_err(|_| {
+                anyhow::anyhow!("Cannot change reasoning effort while a request is in progress")
+            })?;
+            *current = None;
+            return Ok(());
         }
-        if !requested.is_empty() && !accepted {
-            anyhow::bail!(
-                "Reasoning effort '{}' is not supported by the current model/profile (available: {})",
-                effort,
-                self.available_efforts().join(", ")
-            );
+        if jcode_base::prompt::is_swarm_effort(&requested) {
+            let mut current = self.reasoning_effort.try_write().map_err(|_| {
+                anyhow::anyhow!("Cannot change reasoning effort while a request is in progress")
+            })?;
+            *current = Some(requested);
+            return Ok(());
         }
-        let normalized = self.normalize_reasoning_effort_for_self(&requested);
+        let available = self.available_efforts();
+        let capability = jcode_provider_core::ReasoningCapability::from_values(
+            available
+                .iter()
+                .copied()
+                .filter(|value| !jcode_base::prompt::is_swarm_effort(value)),
+        );
+        let normalized = match jcode_provider_core::resolve_reasoning_effort(
+            &requested,
+            &capability,
+        ) {
+            jcode_provider_core::ReasoningResolution::Applied {
+                requested,
+                resolved,
+                reason,
+            } => {
+                if requested != resolved {
+                    jcode_base::logging::info(&format!(
+                        "Reasoning effort fallback for model '{}' on '{}': {} -> {} ({:?})",
+                        self.model(),
+                        self.runtime_display_name(),
+                        requested.as_str(),
+                        resolved.as_str(),
+                        reason
+                    ));
+                }
+                self.normalize_reasoning_effort_for_self(resolved.as_str())
+            }
+            jcode_provider_core::ReasoningResolution::Unapplied { .. } => {
+                anyhow::bail!(
+                    "Reasoning effort '{}' is not supported by the current model/profile (available: {})",
+                    effort,
+                    available.join(", ")
+                );
+            }
+        };
         let mut current = self.reasoning_effort.try_write().map_err(|_| {
             anyhow::anyhow!("Cannot change reasoning effort while a request is in progress")
         })?;

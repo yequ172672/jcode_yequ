@@ -343,22 +343,30 @@ fn append_model_runtime_metadata(spans: &mut Vec<Span<'static>>, data: &InfoWidg
     }
 }
 
-fn short_reasoning_effort(effort: &str) -> Option<&str> {
+fn short_reasoning_effort(effort: &str) -> Option<String> {
     let effort = effort.trim();
     if effort.is_empty() {
         return None;
     }
-    Some(match effort {
-        "max" => "max",
-        "xhigh" => "xhi",
-        "high" => "hi",
-        "medium" => "med",
-        "low" => "lo",
-        "none" => "∅",
-        "swarm" => "swarm",
-        "swarm-deep" => "swarm+",
-        other => other,
-    })
+    if let Some((requested, effective)) = effort.split_once('→') {
+        let requested = short_reasoning_effort(requested)?;
+        let effective = short_reasoning_effort(effective)?;
+        return Some(format!("{requested}→{effective}"));
+    }
+    Some(
+        match effort {
+            "max" => "max",
+            "xhigh" => "xhi",
+            "high" => "hi",
+            "medium" => "med",
+            "low" => "lo",
+            "none" => "∅",
+            "swarm" => "swarm",
+            "swarm-deep" => "swarm+",
+            other => other,
+        }
+        .to_string(),
+    )
 }
 
 fn short_service_tier(service_tier: &str) -> Option<&str> {
@@ -431,6 +439,18 @@ mod tests {
             .into_iter()
             .map(|span| span.content.into_owned())
             .collect::<String>()
+    }
+
+    #[test]
+    fn short_reasoning_effort_preserves_requested_to_effective_fallback() {
+        assert_eq!(
+            short_reasoning_effort("max→high").as_deref(),
+            Some("max→hi")
+        );
+        assert_eq!(
+            short_reasoning_effort("xhigh→default").as_deref(),
+            Some("xhi→default")
+        );
     }
 
     #[test]

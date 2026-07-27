@@ -307,10 +307,10 @@ async fn openai_available_efforts_follow_active_model_catalog_metadata() {
         Some("xhigh"),
         "swarm must clamp to the active model's strongest advertised effort"
     );
-    assert!(
-        provider.set_reasoning_effort("max").is_err(),
-        "explicit effort choices must respect active-model catalog capabilities"
-    );
+    provider
+        .set_reasoning_effort("max")
+        .expect("max should resolve to the strongest advertised effort");
+    assert_eq!(provider.reasoning_effort().as_deref(), Some("xhigh"));
     provider
         .set_reasoning_effort("xhigh")
         .expect("advertised effort should be accepted");

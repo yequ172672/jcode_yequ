@@ -884,22 +884,40 @@ impl Provider for OpenAIProvider {
                 effort
             );
         }
-        let normalized = Self::normalize_reasoning_effort(effort);
+        let mut normalized = Self::normalize_reasoning_effort(effort);
         if let Some(requested) = normalized.as_deref()
             && !jcode_base::prompt::is_swarm_effort(requested)
         {
             let available = self.available_efforts();
-            if !available.contains(&requested) {
-                anyhow::bail!(
-                    "OpenAI reasoning effort '{}' is not supported by model '{}' (available: {})",
+            let capability = jcode_provider_core::ReasoningCapability::from_values(
+                available
+                    .iter()
+                    .copied()
+                    .filter(|value| !jcode_base::prompt::is_swarm_effort(value)),
+            );
+            match jcode_provider_core::resolve_reasoning_effort(requested, &capability) {
+                jcode_provider_core::ReasoningResolution::Applied {
                     requested,
-                    self.model(),
-                    available
-                        .into_iter()
-                        .filter(|effort| !jcode_base::prompt::is_swarm_effort(effort))
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                );
+                    resolved,
+                    reason,
+                } => {
+                    if requested != resolved {
+                        jcode_base::logging::info(&format!(
+                            "OpenAI reasoning effort fallback for model '{}': {} -> {} ({:?})",
+                            self.model(),
+                            requested.as_str(),
+                            resolved.as_str(),
+                            reason
+                        ));
+                    }
+                    normalized = Some(resolved.as_str().to_string());
+                }
+                jcode_provider_core::ReasoningResolution::Unapplied { .. } => {
+                    anyhow::bail!(
+                        "OpenAI model '{}' does not advertise a usable reasoning effort",
+                        self.model()
+                    );
+                }
             }
         }
         match self.reasoning_effort.write() {
