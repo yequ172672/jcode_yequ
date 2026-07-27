@@ -270,8 +270,8 @@ fn picker_render_width(picker: &crate::tui::InlineInteractiveState, max_width: u
 
     if picker.uses_compact_navigation() {
         let show_provider_badge = account_picker_shows_provider_badge(picker);
-        let mut max_title_len = display_width("ACCOUNT");
-        let mut max_state_len = display_width("STATE");
+        let mut max_title_len = display_width(crate::tui::i18n::account_primary_label());
+        let mut max_state_len = display_width(crate::tui::i18n::account_secondary_label());
 
         for &fi in &picker.filtered {
             let entry = &picker.entries[fi];
@@ -393,8 +393,8 @@ pub(super) fn draw_inline_interactive(frame: &mut Frame, app: &dyn TuiState, are
         is_account_picker && account_picker_shows_provider_badge(picker);
     let mut max_provider_len = display_width(picker.secondary_label(is_preview));
     let mut max_via_len = display_width(picker.tertiary_label());
-    let mut max_account_title_len = display_width("ACCOUNT");
-    let mut max_account_state_len = display_width("STATE");
+    let mut max_account_title_len = display_width(crate::tui::i18n::account_primary_label());
+    let mut max_account_state_len = display_width(crate::tui::i18n::account_secondary_label());
     for &fi in picker.filtered.iter().take(WIDTH_SCAN_LIMIT) {
         let entry = &picker.entries[fi];
         let route = entry.active_option();
