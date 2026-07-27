@@ -424,3 +424,104 @@ pub fn observe_mode_disabled() -> &'static str {
 pub fn btw_usage() -> &'static str {
     if_zh("用法: /btw <问题>", "Usage: /btw <question>")
 }
+// -- Help overlay functions --
+
+pub fn help_section_commands() -> &'static str { if_zh("  命令", "  Commands") }
+pub fn help_section_keys() -> &'static str { if_zh("  快捷键", "  Keys") }
+pub fn help_section_skills() -> &'static str { if_zh("  技能", "  Skills") }
+pub fn help_section_all_skills() -> &'static str { if_zh("  所有技能", "  All Skills") }
+pub fn help_entry_help() -> &'static str { if_zh("显示此帮助覆盖层", "Show this help overlay") }
+pub fn help_entry_help_command() -> &'static str { if_zh("显示一个命令的详细信息", "Show details for one command") }
+pub fn help_entry_model() -> &'static str { if_zh("列出或切换模型", "List or switch models") }
+pub fn help_entry_model_switch() -> &'static str { if_zh("切换到指定模型", "Switch to a different model") }
+pub fn help_entry_provider_test() -> &'static str { if_zh("显示当前提供商/模型的实测证据", "Show live-test evidence for the current provider/model") }
+pub fn help_entry_agents() -> &'static str { if_zh("配置代理角色的模型", "Configure models for agent roles") }
+pub fn help_entry_swarm_prompt() -> &'static str { if_zh("打开当前 swarm 路由提示", "Open the active swarm routing prompt in your editor") }
+pub fn help_entry_effort() -> &'static str { if_zh("设置思考等级", "Set effort") }
+pub fn help_entry_fast() -> &'static str { if_zh("切换快速模式", "Toggle fast mode") }
+pub fn help_entry_transport() -> &'static str { if_zh("设置连接方式", "Set connection transport") }
+pub fn help_entry_alignment() -> &'static str { if_zh("显示或持久化文本对齐偏好", "Show or persist text alignment preference") }
+pub fn help_entry_compact_notifications() -> &'static str { if_zh("折叠 swarm/文件活动通知为单行", "Collapse swarm/file-activity notifications to one line") }
+pub fn help_entry_show_agentgrep() -> &'static str { if_zh("在聊天中内联渲染完整的 agentgrep 搜索结果", "Render full agentgrep search output inline in chat") }
+pub fn help_entry_config() -> &'static str { if_zh("显示当前配置", "Show active configuration") }
+pub fn help_entry_config_init() -> &'static str { if_zh("创建默认配置文件", "Create default config file") }
+pub fn help_entry_config_edit() -> &'static str { if_zh("在 $EDITOR 中打开配置", "Open config in $EDITOR") }
+pub fn help_entry_dictate() -> &'static str { if_zh("运行配置的外部听写", "Run configured external dictation") }
+pub fn help_entry_git() -> &'static str { if_zh("显示仓库分支和工作树状态", "Show branch and working tree status for the repo") }
+pub fn help_entry_context() -> &'static str { if_zh("显示完整的会话上下文快照", "Show the full session context snapshot") }
+pub fn help_entry_skills() -> &'static str { if_zh("显示已加载的技能和推荐", "Show loaded skills and jcode-endorsed recommendations") }
+pub fn help_entry_info() -> &'static str { if_zh("显示会话信息和令牌用量", "Show session info and token usage") }
+pub fn help_entry_keys() -> &'static str { if_zh("显示与终端/OS 的按键绑定冲突", "Show keybinding conflicts with your terminal/OS") }
+pub fn help_entry_usage() -> &'static str { if_zh("显示已连接提供商的用量限制", "Show connected provider usage limits") }
+pub fn help_entry_support() -> &'static str { if_zh("发送支持邮件（预填诊断信息）", "Email support with diagnostics prefilled") }
+pub fn help_entry_version() -> &'static str { if_zh("显示版本和构建详情", "Show version and build details") }
+pub fn help_entry_changelog() -> &'static str { if_zh("显示此构建的近期变更", "Show recent changes in this build") }
+pub fn help_entry_btw() -> &'static str { if_zh("对之前的话题问一个跟进问题", "Ask a follow-up about an earlier topic") }
+pub fn help_entry_clear() -> &'static str { if_zh("清空对话并从头开始", "Clear conversation and start fresh") }
+pub fn help_entry_export() -> &'static str { if_zh("将会话导出为纯文本格式", "Export session as plain text") }
+pub fn help_entry_copy_last_url() -> &'static str { if_zh("将最后聊到的 URL 复制到4剪贴板", "Copy the last chat URL to clipboard") }
+pub fn help_entry_improve() -> &'static str { if_zh("启动自动改进循环", "Start an automatic improvement loop") }
+pub fn help_entry_refactor() -> &'static str { if_zh("启动自动重构循环", "Start an automatic refactor loop") }
+pub fn help_entry_catch_up() -> &'static str { if_zh("跳转至已完成的会话并打开摘要", "Jump to finished sessions and open a Catch Up brief") }
+pub fn help_entry_edit() -> &'static str { if_zh("在 $EDITOR 中打开信息卡", "Open info cards in $EDITOR") }
+pub fn help_entry_notifications() -> &'static str { if_zh("管理实时会话：查看哪些在运行和就绪", "Manage live sessions: see which are working vs ready") }
+pub fn help_entry_windmill() -> &'static str { if_zh("启用和管理 Niri 风格的会话工作区", "Enable and manage the Niri-style session workspace") }
+pub fn help_entry_observe() -> &'static str { if_zh("让代理阅读聊天并在之后提问", "Let the agent catch up on chat and ask questions later") }
+pub fn help_entry_workspace() -> &'static str { if_zh("切换到另一个工作区和会话", "Switch to another workspace and session") }
+pub fn help_entry_workspace_new() -> &'static str { if_zh("创建一个新的空工作区", "Create a new empty workspace") }
+pub fn help_entry_workspace_list() -> &'static str { if_zh("列出所有工作区中的活动会话", "List active sessions in all workspaces") }
+pub fn help_entry_workspace_rename() -> &'static str { if_zh("重命名当前工作区", "Rename the current workspace") }
+pub fn help_entry_workspace_remove() -> &'static str { if_zh("删除当前工作区及其会话", "Delete the current workspace and its sessions") }
+pub fn help_entry_resume() -> &'static str { if_zh("浏览和恢复之前的会话", "Browse and resume previous sessions") }
+pub fn help_entry_save() -> &'static str { if_zh("将会话加书签以供 /resume 使用", "Bookmark session for /resume") }
+pub fn help_entry_share() -> &'static str { if_zh("导出并编码当前会话为共享文本", "Export and encode the current session as share text") }
+pub fn help_entry_onboarding() -> &'static str { if_zh("重新显示设置欢迎屏幕", "Re-show the setup welcome screen") }
+pub fn help_entry_memory() -> &'static str { if_zh("切换记忆功能", "Toggle memory features") }
+pub fn help_entry_forget() -> &'static str { if_zh("从当前项目记忆中移除项目", "Remove an item from current project memory") }
+pub fn help_entry_telemetry() -> &'static str { if_zh("查看或更改遥测偏好", "View or change telemetry preferences") }
+pub fn help_entry_swarm() -> &'static str { if_zh("切换 swarm 功能", "Toggle swarm features") }
+pub fn help_entry_login() -> &'static str { if_zh("交互式或直接登录", "Interactive or direct login") }
+pub fn help_entry_logout() -> &'static str { if_zh("登出提供商", "Log out from a provider") }
+pub fn help_entry_account() -> &'static str { if_zh("管理已保存的账户", "Manage saved accounts") }
+pub fn help_entry_subagent_model() -> &'static str { if_zh("设置子代理模型覆盖", "Set sub-agent model override") }
+pub fn help_entry_language() -> &'static str { if_zh("切换语言", "Switch language") }
+pub fn help_entry_reload() -> &'static str { if_zh("如有新版本则重载到新二进制", "Reload to newer binary if available") }
+pub fn help_entry_continue_all() -> &'static str { if_zh("继续所有会自恢复的中断的实时会话", "Continue every interrupted live session that would auto-resume") }
+pub fn help_entry_quit() -> &'static str { if_zh("退出 jcode", "Exit jcode") }
+pub fn help_entry_client_reload() -> &'static str { if_zh("强制重载客户端二进制", "Force reload client binary") }
+pub fn help_entry_server_reload() -> &'static str { if_zh("强制重载服务器二进制", "Force reload server binary") }
+pub fn help_entry_get() -> &'static str { if_zh("从会话恢复提示（高级）", "Get resume prompt from a session (advanced)") }
+pub fn help_entry_yank() -> &'static str { if_zh("将会话内容拉取到此会话的提示中", "Pull session content into this session's prompts") }
+pub fn help_skill_activate() -> &'static str { if_zh("激活技能", "Activate skill") }
+
+// -- Onboarding --
+pub fn onboarding_esc_skip() -> &'static str { if_zh("Esc 跳过引导（稍后用 /login 登录）。", "Esc to skip onboarding (log in later with /login).") }
+pub fn onboarding_yes() -> &'static str { if_zh("是", "Yes") }
+pub fn onboarding_no() -> &'static str { if_zh("否", "No") }
+pub fn onboarding_continue() -> &'static str { if_zh("继续", "Continue") }
+pub fn onboarding_import_less() -> &'static str { if_zh("导具更少", "Import less") }
+pub fn onboarding_telemetry_settings() -> &'static str { if_zh("遥测设置", "Telemetry settings") }
+pub fn onboarding_telemetry_title() -> &'static str { if_zh("遥测设置", "Telemetry settings") }
+pub fn onboarding_send_everything() -> &'static str { if_zh("发送所有内容（包括提示词）", "Send everything, including prompts") }
+pub fn onboarding_helps_most() -> &'static str { if_zh("最能帮助 jcode 改进", "Helps jcode the most") }
+pub fn onboarding_no_content() -> &'static str { if_zh("不发送提示词或转录", "No prompts or transcripts") }
+pub fn onboarding_usage_stats() -> &'static str { if_zh("仅用量统计和崩溃报告", "Usage stats and crash reports only") }
+pub fn onboarding_send_nothing() -> &'static str { if_zh("不发送任何内容", "Send nothing") }
+pub fn onboarding_no_crash_fix() -> &'static str { if_zh("我们将无法看到崩溃并修复它们", "We stop seeing crashes and can't fix them") }
+pub fn onboarding_telemetry_env_disabled() -> &'static str { if_zh("您的环境已禁用遥测（JCODE_NO_TELEMETRY）。", "Your environment already disables telemetry (JCODE_NO_TELEMETRY).") }
+pub fn onboarding_esc_back() -> &'static str { if_zh("Esc 返回。稍后可用 /telemetry 更改。", "Esc goes back. Change this later with /telemetry.") }
+pub fn onboarding_choose_provider() -> &'static str { if_zh("按 Enter 选择提供商（OpenAI、Anthropic 等）。", "Press Enter to choose a provider (OpenAI, Anthropic, and more).") }
+pub fn onboarding_help_fix(agent: &str) -> String {
+    match current_language() {
+        Language::Zh => format!("按 H 让 {} 帮助修复此问题。", agent),
+        Language::En => format!("Press H to have {} help fix this for you.", agent),
+    }
+}
+pub fn onboarding_pick_login() -> &'static str { if_zh("按 Enter 选择登录对象（OpenAI、Anthropic 等）。", "Press Enter to pick who to log in with (OpenAI, Anthropic, and more).") }
+pub fn onboarding_press_number(count: usize) -> String {
+    match current_language() {
+        Language::Zh => format!("按 1-{} 或输入任意内容开始", count),
+        Language::En => format!("Press 1-{} or type anything to start", count),
+    }
+}
+

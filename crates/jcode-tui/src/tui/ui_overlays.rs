@@ -174,78 +174,78 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
 
     lines.push(Line::from(""));
 
-    lines.push(Line::from(Span::styled("  Commands", section_style)));
+    lines.push(Line::from(Span::styled(crate::tui::i18n::help_section_commands(), section_style)));
     lines.push(Line::from(""));
-    lines.push(help_entry("/help", "Show this help overlay"));
+    lines.push(help_entry("/help", crate::tui::i18n::help_entry_help()));
     lines.push(help_entry(
         "/help <command>",
-        "Show details for one command",
+        crate::tui::i18n::help_entry_help_command(),
     ));
-    lines.push(help_entry("/model", "List or switch models"));
-    lines.push(help_entry("/model <name>", "Switch to a different model"));
+    lines.push(help_entry("/model", crate::tui::i18n::help_entry_model()));
+    lines.push(help_entry("/model <name>", crate::tui::i18n::help_entry_model_switch()));
     lines.push(help_entry(
         "/provider-test-coverage",
-        "Show live-test evidence for the current provider/model",
+        crate::tui::i18n::help_entry_provider_test(),
     ));
-    lines.push(help_entry("/agents", "Configure models for agent roles"));
+    lines.push(help_entry("/agents", crate::tui::i18n::help_entry_agents()));
     lines.push(help_entry(
         "/swarm-prompt",
-        "Open the active swarm routing prompt in your editor",
+        crate::tui::i18n::help_entry_swarm_prompt(),
     ));
     lines.push(help_entry(
         "/effort <level>",
-        "Set effort (none|minimal|low|medium|high|xhigh|max|swarm|swarm-deep)",
+        crate::tui::i18n::help_entry_effort(),
     ));
     lines.push(help_entry(
         "/fast [on|off|status|default ...]",
-        "Toggle fast mode",
+        crate::tui::i18n::help_entry_fast(),
     ));
     lines.push(help_entry(
         "/transport <mode>",
-        "Set connection transport (auto|https|websocket)",
+        crate::tui::i18n::help_entry_transport(),
     ));
     lines.push(help_entry(
         "/alignment [status|centered|left]",
-        "Show or persist text alignment preference",
+        crate::tui::i18n::help_entry_alignment(),
     ));
     lines.push(help_entry(
         "/compact-notifications [status|on|off]",
-        "Collapse swarm/file-activity notifications to one line",
+        crate::tui::i18n::help_entry_compact_notifications(),
     ));
     lines.push(help_entry(
         "/show-agentgrep-output [status|on|off]",
-        "Render full agentgrep search output inline in chat",
+        crate::tui::i18n::help_entry_show_agentgrep(),
     ));
-    lines.push(help_entry("/config", "Show active configuration"));
-    lines.push(help_entry("/config init", "Create default config file"));
-    lines.push(help_entry("/config edit", "Open config in $EDITOR"));
-    lines.push(help_entry("/dictate", "Run configured external dictation"));
+    lines.push(help_entry("/config", crate::tui::i18n::help_entry_config()));
+    lines.push(help_entry("/config init", crate::tui::i18n::help_entry_config_init()));
+    lines.push(help_entry("/config edit", crate::tui::i18n::help_entry_config_edit()));
+    lines.push(help_entry("/dictate", crate::tui::i18n::help_entry_dictate()));
     lines.push(help_entry(
         "/git [status]",
-        "Show branch and working tree status for the repo",
+        crate::tui::i18n::help_entry_git(),
     ));
     lines.push(help_entry(
         "/context",
-        "Show the full session context snapshot",
+        crate::tui::i18n::help_entry_context(),
     ));
     lines.push(help_entry(
         "/skills",
-        "Show loaded skills and jcode-endorsed recommendations",
+        crate::tui::i18n::help_entry_skills(),
     ));
-    lines.push(help_entry("/info", "Show session info and token usage"));
+    lines.push(help_entry("/info", crate::tui::i18n::help_entry_info()));
     lines.push(help_entry(
         "/keys",
-        "Show keybinding conflicts with your terminal/OS",
+        crate::tui::i18n::help_entry_keys(),
     ));
-    lines.push(help_entry("/usage", "Show connected provider usage limits"));
+    lines.push(help_entry("/usage", crate::tui::i18n::help_entry_usage()));
     lines.push(help_entry(
         "/support",
-        "Email support with diagnostics prefilled",
+        crate::tui::i18n::help_entry_support(),
     ));
-    lines.push(help_entry("/version", "Show version and build details"));
+    lines.push(help_entry("/version", crate::tui::i18n::help_entry_version()));
     lines.push(help_entry(
         "/changelog",
-        "Show recent changes in this build",
+        crate::tui::i18n::help_entry_changelog(),
     ));
 
     lines.push(Line::from(""));
@@ -254,7 +254,7 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
 
     lines.push(Line::from(Span::styled("  Session", section_style)));
     lines.push(Line::from(""));
-    lines.push(help_entry("/clear", "Clear conversation and start fresh"));
+    lines.push(help_entry("/clear", crate::tui::i18n::help_entry_clear()));
     lines.push(help_entry(
         "/compact",
         "Summarize old messages to free context",
@@ -305,20 +305,20 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
     ));
     lines.push(help_entry(
         "/workspace [status|on|off|add]",
-        "Enable and manage the Niri-style session workspace",
+        crate::tui::i18n::help_entry_windmill(),
     ));
     lines.push(help_entry(
         "/catchup [next|list]",
-        "Jump to finished sessions and open a Catch Up brief",
+        crate::tui::i18n::help_entry_catch_up(),
     ));
     lines.push(help_entry(
         "/back",
         "Return to the previous Catch Up source session",
     ));
-    lines.push(help_entry("/resume", "Browse and resume previous sessions"));
+    lines.push(help_entry("/resume", crate::tui::i18n::help_entry_resume()));
     lines.push(help_entry(
         "/active",
-        "Manage live sessions: see which are working vs ready",
+        crate::tui::i18n::help_entry_notifications(),
     ));
     lines.push(help_entry(
         "/catchup [next]",
@@ -328,7 +328,7 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
         "/back",
         "Return to the previous Catch Up session",
     ));
-    lines.push(help_entry("/save [label]", "Bookmark session for /resume"));
+    lines.push(help_entry("/save [label]", crate::tui::i18n::help_entry_save()));
     lines.push(help_entry(
         "/rename <name>|--clear",
         "Set or clear current session name",
@@ -344,7 +344,7 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
 
     lines.push(Line::from(Span::styled("  Memory & Swarm", section_style)));
     lines.push(Line::from(""));
-    lines.push(help_entry("/memory [on|off]", "Toggle memory features"));
+    lines.push(help_entry("/memory [on|off]", crate::tui::i18n::help_entry_memory()));
     lines.push(help_entry(
         "/test [claim]",
         "Run layered verification and produce proof",
@@ -353,7 +353,7 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
         "/initiatives",
         "Open initiatives overview / resume an initiative",
     ));
-    lines.push(help_entry("/swarm [on|off]", "Toggle swarm features"));
+    lines.push(help_entry("/swarm [on|off]", crate::tui::i18n::help_entry_swarm()));
 
     lines.push(Line::from(""));
     lines.push(separator());
@@ -364,7 +364,7 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
     lines.push(help_entry("/auth", "Show authentication status"));
     lines.push(help_entry(
         "/login [provider]",
-        "Interactive or direct login",
+        crate::tui::i18n::help_entry_login(),
     ));
     lines.push(help_entry(
         "/account",
@@ -385,7 +385,7 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
 
     lines.push(Line::from(Span::styled("  System", section_style)));
     lines.push(Line::from(""));
-    lines.push(help_entry("/reload", "Reload to newer binary if available"));
+    lines.push(help_entry("/reload", crate::tui::i18n::help_entry_reload()));
     lines.push(help_entry(
         "/restart",
         "Restart with current binary (no build)",
@@ -395,18 +395,18 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
         "Full update (git pull + build + tests)",
     ));
     if app.is_remote_mode() {
-        lines.push(help_entry("/client-reload", "Force reload client binary"));
-        lines.push(help_entry("/server-reload", "Force reload server binary"));
+        lines.push(help_entry("/client-reload", crate::tui::i18n::help_entry_client_reload()));
+        lines.push(help_entry("/server-reload", crate::tui::i18n::help_entry_server_reload()));
         lines.push(help_entry(
             "/continue",
-            "Continue every interrupted live session that would auto-resume",
+            crate::tui::i18n::help_entry_continue_all(),
         ));
     }
     lines.push(help_entry(
         "/debug-visual",
         "Enable visual debugging for TUI issues",
     ));
-    lines.push(help_entry("/quit", "Exit jcode"));
+    lines.push(help_entry("/quit", crate::tui::i18n::help_entry_quit()));
 
     let skills = app.available_skills();
     if !skills.is_empty() {
@@ -414,10 +414,10 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
         lines.push(separator());
         lines.push(Line::from(""));
 
-        lines.push(Line::from(Span::styled("  Skills", section_style)));
+        lines.push(Line::from(Span::styled(crate::tui::i18n::help_section_skills(), section_style)));
         lines.push(Line::from(""));
         for skill in &skills {
-            lines.push(help_entry(&format!("/{}", skill), "Activate skill"));
+            lines.push(help_entry(&format!("/{}", skill), crate::tui::i18n::help_skill_activate()));
         }
     }
 

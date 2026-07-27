@@ -37,7 +37,7 @@ fn push_esc_skip_hint(lines: &mut Vec<Line<'static>>, align: Alignment) {
     lines.push(Line::from(""));
     lines.push(
         Line::from(Span::styled(
-            "Esc to skip onboarding (log in later with /login).",
+            crate::tui::i18n::onboarding_esc_skip(),
             Style::default().fg(dim_color()),
         ))
         .alignment(align),
@@ -127,9 +127,9 @@ fn lozenge_pill_spans(label: &str, filled: bool) -> Vec<Span<'static>> {
 /// and fill carry the selection visually so no instruction sentence is needed.
 fn yes_no_pill_line(yes_highlighted: bool, align: Alignment) -> Line<'static> {
     let mut spans = Vec::new();
-    spans.extend(lozenge_pill_spans("Yes", yes_highlighted));
+    spans.extend(lozenge_pill_spans(crate::tui::i18n::onboarding_yes(), yes_highlighted));
     spans.push(Span::raw("   "));
-    spans.extend(lozenge_pill_spans("No", !yes_highlighted));
+    spans.extend(lozenge_pill_spans(crate::tui::i18n::onboarding_no(), !yes_highlighted));
     Line::from(spans).alignment(align)
 }
 
@@ -138,7 +138,7 @@ fn yes_no_pill_line(yes_highlighted: bool, align: Alignment) -> Line<'static> {
 /// read a "Press Enter" instruction). Uses the same lozenge style as the Yes/No
 /// pills: a filled accent capsule when `focused`, a hollow outline otherwise.
 fn continue_pill_line(focused: bool, align: Alignment) -> Line<'static> {
-    Line::from(lozenge_pill_spans("Continue", focused)).alignment(align)
+    Line::from(lozenge_pill_spans(crate::tui::i18n::onboarding_continue(), focused)).alignment(align)
 }
 
 /// The summary-screen action row: "Continue" (imports everything, preselected)
@@ -150,7 +150,7 @@ fn import_summary_pills_line(
 ) -> Line<'static> {
     use crate::tui::ImportSummaryPill as Pill;
     let mut spans = Vec::new();
-    spans.extend(lozenge_pill_spans("Continue", focused == Pill::Continue));
+    spans.extend(lozenge_pill_spans(crate::tui::i18n::onboarding_continue(), focused == Pill::Continue));
     spans.push(Span::raw("   "));
     spans.extend(lozenge_pill_spans(
         "Import less",
@@ -189,18 +189,18 @@ fn telemetry_settings_lines(
     let options = [
         (
             Choice::Everything,
-            "Send everything, including prompts",
-            "Helps jcode the most",
+            crate::tui::i18n::onboarding_send_everything(),
+            crate::tui::i18n::onboarding_helps_most(),
         ),
         (
             Choice::NoContent,
-            "No prompts or transcripts",
-            "Usage stats and crash reports only",
+            crate::tui::i18n::onboarding_no_content(),
+            crate::tui::i18n::onboarding_usage_stats(),
         ),
         (
             Choice::Nothing,
-            "Send nothing",
-            "We stop seeing crashes and can't fix them",
+            crate::tui::i18n::onboarding_send_nothing(),
+            crate::tui::i18n::onboarding_no_crash_fix(),
         ),
     ];
     for (choice, label, caption) in options {
@@ -212,7 +212,7 @@ fn telemetry_settings_lines(
     if env_forced_off {
         lines.push(
             Line::from(Span::styled(
-                "Your environment already disables telemetry (JCODE_NO_TELEMETRY).",
+                crate::tui::i18n::onboarding_telemetry_env_disabled(),
                 dim,
             ))
             .alignment(align),
@@ -220,7 +220,7 @@ fn telemetry_settings_lines(
     }
     lines.push(
         Line::from(Span::styled(
-            "Esc goes back. Change this later with /telemetry.",
+            crate::tui::i18n::onboarding_esc_back(),
             dim,
         ))
         .alignment(align),
@@ -472,7 +472,7 @@ fn welcome_body_lines(app: &dyn TuiState) -> Vec<Line<'static>> {
                     );
                     lines.push(
                         Line::from(Span::styled(
-                            "Press Enter to choose a provider (OpenAI, Anthropic, and more).",
+                            crate::tui::i18n::onboarding_choose_provider(),
                             Style::default().fg(dim_color()),
                         ))
                         .alignment(align),
@@ -483,7 +483,7 @@ fn welcome_body_lines(app: &dyn TuiState) -> Vec<Line<'static>> {
                     if let Some(agent) = repair_agent_label {
                         lines.push(
                             Line::from(Span::styled(
-                                format!("Press H to have {agent} help fix this for you."),
+                                crate::tui::i18n::onboarding_help_fix(&agent),
                                 Style::default().fg(welcome_accent()),
                             ))
                             .alignment(align),
@@ -502,7 +502,7 @@ fn welcome_body_lines(app: &dyn TuiState) -> Vec<Line<'static>> {
                     );
                     lines.push(
                         Line::from(Span::styled(
-                            "Press Enter to pick who to log in with (OpenAI, Anthropic, and more).",
+                            crate::tui::i18n::onboarding_pick_login(),
                             Style::default().fg(dim_color()),
                         ))
                         .alignment(align),
@@ -658,7 +658,7 @@ fn welcome_body_lines(app: &dyn TuiState) -> Vec<Line<'static>> {
             lines.push(Line::from(""));
             lines.push(
                 Line::from(Span::styled(
-                    format!("Press 1-{} or type anything to start", suggestions.len()),
+                    crate::tui::i18n::onboarding_press_number(suggestions.len()),
                     Style::default().fg(dim_color()),
                 ))
                 .alignment(align),
