@@ -487,7 +487,7 @@ impl LoginPicker {
 
         let Some(item) = self.selected_item() else {
             frame.render_widget(
-                Paragraph::new("No provider selected").style(Style::default().fg(Color::DarkGray)),
+                Paragraph::new(crate::tui::i18n::no_provider_selected()).style(Style::default().fg(Color::DarkGray)),
                 inner,
             );
             return;

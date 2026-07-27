@@ -936,3 +936,12 @@ pub fn logged_out_of_summary(summary: &str) -> String {
         Language::En => format!("Logged out of: {}.", summary),
     }
 }
+// -- Misc remaining --
+pub fn no_provider_selected() -> &'static str { if_zh("未选择提供商", "No provider selected") }
+pub fn no_session_selected() -> &'static str { if_zh("未选择会话", "No session selected") }
+pub fn usage_log_mark() -> &'static str { if_zh("用法: /log mark [备注]", "Usage: /log mark [note]") }
+pub fn usage_transfer() -> &'static str { if_zh("用法: /transfer", "Usage: /transfer") }
+pub fn usage_swarm_prompt() -> &'static str { if_zh("用法: /swarm-prompt", "Usage: /swarm-prompt") }
+pub fn usage_review() -> &'static str { if_zh("用法: /review", "Usage: /review") }
+pub fn usage_judge() -> &'static str { if_zh("用法: /judge", "Usage: /judge") }
+

@@ -926,7 +926,7 @@ pub(super) fn handle_review_command_local(app: &mut App, trimmed: &str) -> bool 
         return true;
     }
 
-    app.push_display_message(DisplayMessage::error("Usage: /review".to_string()));
+    app.push_display_message(DisplayMessage::error(crate::tui::i18n::usage_review().to_string()));
     true
 }
 
@@ -1001,7 +1001,7 @@ pub(super) fn handle_judge_command_local(app: &mut App, trimmed: &str) -> bool {
         return true;
     }
 
-    app.push_display_message(DisplayMessage::error("Usage: /judge".to_string()));
+    app.push_display_message(DisplayMessage::error(crate::tui::i18n::usage_judge().to_string()));
     true
 }
 

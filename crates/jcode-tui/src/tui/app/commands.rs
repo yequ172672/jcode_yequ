@@ -989,7 +989,7 @@ pub(super) fn handle_log_command(app: &mut App, trimmed: &str) -> bool {
     let note = parts.next().unwrap_or_default().trim();
 
     if subcommand != "mark" {
-        app.push_display_message(DisplayMessage::error("Usage: /log mark [note]".to_string()));
+        app.push_display_message(DisplayMessage::error(crate::tui::i18n::usage_log_mark().to_string()));
         return true;
     }
 
@@ -2159,7 +2159,7 @@ pub(super) fn handle_session_command(app: &mut App, trimmed: &str) -> bool {
     }
 
     if trimmed.starts_with("/transfer ") {
-        app.push_display_message(DisplayMessage::error("Usage: /transfer".to_string()));
+        app.push_display_message(DisplayMessage::error(crate::tui::i18n::usage_transfer().to_string()));
         return true;
     }
 
@@ -2973,7 +2973,7 @@ pub(super) fn handle_swarm_prompt_command(app: &mut App, trimmed: &str) -> bool 
         && trimmed != "/swarm-prompt open"
     {
         if trimmed.starts_with("/swarm-prompt ") {
-            app.push_display_message(DisplayMessage::error("Usage: /swarm-prompt".to_string()));
+            app.push_display_message(DisplayMessage::error(crate::tui::i18n::usage_swarm_prompt().to_string()));
             return true;
         }
         return false;

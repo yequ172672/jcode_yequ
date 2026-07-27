@@ -1330,7 +1330,7 @@ impl SessionPicker {
                 .border_type(BorderType::Rounded)
                 .title(" Preview ")
                 .border_style(Style::default().fg(empty_border_color));
-            let paragraph = Paragraph::new("No session selected")
+            let paragraph = Paragraph::new(crate::tui::i18n::no_session_selected())
                 .block(block)
                 .style(Style::default().fg(Color::DarkGray));
             frame.render_widget(paragraph, area);
