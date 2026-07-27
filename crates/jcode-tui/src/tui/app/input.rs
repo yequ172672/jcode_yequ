@@ -187,7 +187,7 @@ fn input_exceeds_submit_limit(input: &str) -> Option<String> {
 }
 
 pub(super) fn paste_from_clipboard(app: &mut App) {
-    app.set_status_notice("Reading clipboard...");
+    app.set_status_notice(crate::tui::i18n::reading_clipboard());
     spawn_clipboard_paste(app, ClipboardPasteKind::Smart);
 }
 
@@ -589,7 +589,7 @@ where
     }
 
     if !copy_text(&app.input) {
-        app.set_status_notice("Failed to copy input line");
+        app.set_status_notice(crate::tui::i18n::failed_to_copy_input_line());
         return false;
     }
 
@@ -598,7 +598,7 @@ where
     app.cursor_pos = 0;
     app.reset_tab_completion();
     app.sync_model_picker_preview_from_input();
-    app.set_status_notice("✂ Cut input line");
+    app.set_status_notice(crate::tui::i18n::cut_input_line());
     true
 }
 
@@ -654,7 +654,7 @@ pub(super) fn handle_paste(app: &mut App, text: String) {
         app.set_status_notice(notice);
     } else if let Some(url) = super::extract_image_url(&text) {
         crate::logging::info(&format!("Downloading image from pasted URL: {}", url));
-        app.set_status_notice("Downloading image...");
+        app.set_status_notice(crate::tui::i18n::downloading_image());
         let session_id = active_clipboard_session_id(app);
         spawn_blocking_or_thread(move || {
             let content = download_image_url_content(&url).unwrap_or_else(|| {
@@ -820,16 +820,16 @@ impl App {
             ClipboardPasteContent::Empty => {
                 match result.kind {
                     ClipboardPasteKind::Smart => {
-                        self.set_status_notice("No text or image in clipboard");
+                        self.set_status_notice(crate::tui::i18n::no_text_or_image_in_clipboard());
                     }
                     ClipboardPasteKind::ImageOnly => {
-                        self.set_status_notice("No image in clipboard")
+                        self.set_status_notice(crate::tui::i18n::no_image_in_clipboard())
                     }
                     ClipboardPasteKind::ImageUrl { fallback_text } => {
                         if let Some(text) = fallback_text {
                             handle_text_paste(self, text);
                         } else {
-                            self.set_status_notice("Failed to download image");
+                            self.set_status_notice(crate::tui::i18n::failed_to_download_image());
                         }
                     }
                 }
@@ -1315,7 +1315,7 @@ pub(super) fn clear_input_for_escape(app: &mut App) {
     app.reset_tab_completion();
     app.sync_model_picker_preview_from_input();
     if had_input {
-        app.set_status_notice("Input cleared - Ctrl+Z to restore");
+        app.set_status_notice(crate::tui::i18n::input_cleared_ctrl_z_to_restore());
     }
 }
 
@@ -1452,7 +1452,7 @@ impl App {
             "🛑 Auto-poke stopped: the provider guardrail refused {} turns in a row. Re-poking the same request will keep getting refused. Rephrase or narrow the task, then run /poke again to resume.",
             self.consecutive_guardrail_stops
         )));
-        self.set_status_notice("Poke stopped: provider guardrail");
+        self.set_status_notice(crate::tui::i18n::poke_stopped_provider_guardrail());
     }
 
     /// Turn-end entry point for automatic continuations. Applies the
@@ -1586,9 +1586,9 @@ impl App {
     pub(crate) fn toggle_next_prompt_new_session_routing(&mut self) {
         self.route_next_prompt_to_new_session = !self.route_next_prompt_to_new_session;
         if self.route_next_prompt_to_new_session {
-            self.set_status_notice("Next prompt → new session");
+            self.set_status_notice(crate::tui::i18n::next_prompt_new_session());
         } else {
-            self.set_status_notice("Next-prompt new session canceled");
+            self.set_status_notice(crate::tui::i18n::next_prompt_new_session_canceled());
         }
     }
 
@@ -1630,9 +1630,9 @@ impl App {
             .or_else(|| std::env::current_dir().ok())
             .unwrap_or_else(|| std::path::PathBuf::from("."));
         match super::spawn_fresh_session_in_new_terminal(&cwd) {
-            Ok(true) => self.set_status_notice("↗ New terminal opened"),
+            Ok(true) => self.set_status_notice(crate::tui::i18n::new_terminal_opened()),
             Ok(false) => {
-                self.set_status_notice("No supported terminal found; run `jcode` manually")
+                self.set_status_notice(crate::tui::i18n::no_supported_terminal_found_run_jcode())
             }
             Err(error) => self.set_status_notice(format!("New terminal failed: {}", error)),
         }
@@ -1675,7 +1675,7 @@ fn route_prompt_to_new_session_local(app: &mut App) -> bool {
             app.input = restored_raw;
             app.cursor_pos = app.input.len();
             app.pending_images = restored_images;
-            app.set_status_notice("Prompt launch failed");
+            app.set_status_notice(crate::tui::i18n::prompt_launch_failed());
             app.push_display_message(DisplayMessage::error(format!(
                 "Failed to launch prompt in a new session: {}",
                 error
@@ -2100,13 +2100,13 @@ pub(super) fn handle_pre_control_shortcuts(
     if app.toggle_keys.swarm_panel_focus.matches(code, modifiers) {
         match app.cycle_swarm_panel_view() {
             super::tui_state::SwarmPanelView::Chat => {
-                app.set_status_notice("Swarm view closed");
+                app.set_status_notice(crate::tui::i18n::swarm_view_closed());
             }
             super::tui_state::SwarmPanelView::Controls => {
-                app.set_status_notice("Swarm: alt+n full page · alt+↑/↓ select · alt+o open · esc");
+                app.set_status_notice(crate::tui::i18n::swarm_alt_n_full_page_alt());
             }
             super::tui_state::SwarmPanelView::FullPage => {
-                app.set_status_notice("Swarm page: alt+n chat · alt+↑/↓ select · alt+o open · esc");
+                app.set_status_notice(crate::tui::i18n::swarm_page_alt_n_chat_alt());
             }
         }
         return true;
@@ -2387,9 +2387,9 @@ pub(super) fn handle_global_control_shortcuts(
                 app.pending_soft_interrupts.clear();
                 app.pending_soft_interrupt_requests.clear();
                 if app.cancel_overnight_for_interrupt() {
-                    app.set_status_notice("Interrupting... Overnight cancelled");
+                    app.set_status_notice(crate::tui::i18n::interrupting_overnight_cancelled());
                 } else {
-                    app.set_status_notice("Interrupting...");
+                    app.set_status_notice(crate::tui::i18n::interrupting());
                 }
             } else {
                 app.handle_quit_request();
@@ -2519,14 +2519,14 @@ pub(super) fn handle_basic_key(app: &mut App, code: KeyCode) -> bool {
                 if disabled_auto_poke {
                     super::commands::disable_auto_poke(app);
                     if cancelled_overnight {
-                        app.set_status_notice("Interrupting... Auto-poke OFF, overnight cancelled");
+                        app.set_status_notice(crate::tui::i18n::interrupting_auto_poke_off_overnight_cancelled());
                     } else {
-                        app.set_status_notice("Interrupting... Auto-poke OFF");
+                        app.set_status_notice(crate::tui::i18n::interrupting_auto_poke_off());
                     }
                 } else if cancelled_overnight {
-                    app.set_status_notice("Interrupting... Overnight cancelled");
+                    app.set_status_notice(crate::tui::i18n::interrupting_overnight_cancelled());
                 } else {
-                    app.set_status_notice("Interrupting...");
+                    app.set_status_notice(crate::tui::i18n::interrupting());
                 }
             } else {
                 app.follow_chat_bottom();
@@ -2554,7 +2554,7 @@ pub(super) fn take_prepared_input(app: &mut App) -> PreparedInput {
 
 pub(super) fn stage_local_interleave(app: &mut App, content: String) {
     app.interleave_message = Some(content);
-    app.set_status_notice("⏭ Sending now (interleave)");
+    app.set_status_notice(crate::tui::i18n::sending_now_interleave());
 }
 
 fn attach_image(app: &mut App, media_type: String, base64_data: String) {
@@ -3603,7 +3603,7 @@ impl App {
                 self.push_display_message(DisplayMessage::system(
                     "Shell command cannot be empty after !.",
                 ));
-                self.set_status_notice("Shell command is empty");
+                self.set_status_notice(crate::tui::i18n::shell_command_is_empty());
                 return;
             }
 
@@ -3611,7 +3611,7 @@ impl App {
                 self.push_display_message(DisplayMessage::system(
                     "Input-line ! shell commands are only available in a local jcode TUI session.",
                 ));
-                self.set_status_notice("Local shell unavailable in remote mode");
+                self.set_status_notice(crate::tui::i18n::local_shell_unavailable_in_remote_mode());
                 return;
             }
 

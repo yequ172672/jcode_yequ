@@ -25,7 +25,7 @@ pub(in crate::tui::app) async fn send_interleave_now(
         }
         Ok(request_id) => {
             app.track_pending_soft_interrupt(request_id, msg_clone);
-            app.set_status_notice("⏭ Interleave sent");
+            app.set_status_notice(crate::tui::i18n::interleave_sent());
         }
     }
 }
@@ -70,7 +70,7 @@ async fn apply_remote_effort_direction(
     let efforts =
         app_mod::inferred_reasoning_efforts(provider_name.as_deref(), provider_model.as_deref());
     if efforts.is_empty() {
-        app.set_status_notice("Reasoning effort not available for this provider");
+        app.set_status_notice(crate::tui::i18n::reasoning_effort_not_available_for_this());
         return Ok(());
     }
     let current = app.remote_reasoning_effort_hint();
@@ -156,7 +156,7 @@ async fn handle_remote_rewind_command(
             message_index: None,
             changed_messages: 0,
         });
-        app.set_status_notice("Undoing rewind...");
+        app.set_status_notice(crate::tui::i18n::undoing_rewind());
         return Ok(true);
     }
 
@@ -393,13 +393,13 @@ async fn handle_remote_key_internal(
     if app.toggle_keys.swarm_panel_focus.matches(code, modifiers) {
         match app.cycle_swarm_panel_view() {
             app_mod::tui_state::SwarmPanelView::Chat => {
-                app.set_status_notice("Swarm view closed");
+                app.set_status_notice(crate::tui::i18n::swarm_view_closed());
             }
             app_mod::tui_state::SwarmPanelView::Controls => {
-                app.set_status_notice("Swarm: alt+n full page · alt+↑/↓ select · alt+o open · esc");
+                app.set_status_notice(crate::tui::i18n::swarm_alt_n_full_page_alt());
             }
             app_mod::tui_state::SwarmPanelView::FullPage => {
-                app.set_status_notice("Swarm page: alt+n chat · alt+↑/↓ select · alt+o open · esc");
+                app.set_status_notice(crate::tui::i18n::swarm_page_alt_n_chat_alt());
             }
         }
         return Ok(());
@@ -463,7 +463,7 @@ async fn handle_remote_key_internal(
             KeyCode::Char('b') => {
                 if matches!(app.status, ProcessingStatus::RunningTool(_)) {
                     remote.background_tool().await?;
-                    app.set_status_notice("Moving tool to background...");
+                    app.set_status_notice(crate::tui::i18n::moving_tool_to_background());
                     return Ok(());
                 }
                 app.cursor_pos = app.find_word_boundary_back();
@@ -599,7 +599,7 @@ async fn handle_remote_key_internal(
             KeyCode::Char('b') => {
                 if matches!(app.status, ProcessingStatus::RunningTool(_)) {
                     remote.background_tool().await?;
-                    app.set_status_notice("Moving tool to background...");
+                    app.set_status_notice(crate::tui::i18n::moving_tool_to_background());
                     return Ok(());
                 }
                 if app.cursor_pos > 0 {
@@ -610,7 +610,7 @@ async fn handle_remote_key_internal(
             KeyCode::Char('c') | KeyCode::Char('d') => {
                 if app.is_processing {
                     remote.cancel_with_reason("keyboard_ctrl_c_or_d").await?;
-                    app.set_status_notice("Interrupting...");
+                    app.set_status_notice(crate::tui::i18n::interrupting());
                 } else {
                     app.handle_quit_request();
                 }
@@ -676,7 +676,7 @@ async fn handle_remote_key_internal(
             KeyCode::Char('p') => {
                 if app.auto_poke_incomplete_todos {
                     let cleared = app_mod::commands::disable_auto_poke(app);
-                    app.set_status_notice("Poke: OFF");
+                    app.set_status_notice(crate::tui::i18n::poke_off());
                     app.push_display_message(DisplayMessage::system(
                         app_mod::commands::poke_disabled_message(cleared),
                     ));
@@ -951,13 +951,13 @@ async fn handle_remote_key_internal(
                         "Continuing all interrupted sessions...".to_string(),
                     ));
                     match remote.resume_all_sessions().await {
-                        Ok(_) => app.set_status_notice("Continuing interrupted sessions..."),
+                        Ok(_) => app.set_status_notice(crate::tui::i18n::continuing_interrupted_sessions()),
                         Err(error) => {
                             app.push_display_message(DisplayMessage::error(format!(
                                 "Failed to continue sessions: {}",
                                 error
                             )));
-                            app.set_status_notice("Continue all failed");
+                            app.set_status_notice(crate::tui::i18n::continue_all_failed());
                         }
                     }
                     return Ok(());
@@ -1005,14 +1005,14 @@ async fn handle_remote_key_internal(
                         ),
                     );
                     match remote.refresh_models().await {
-                        Ok(()) => app.set_status_notice("Refreshing model list..."),
+                        Ok(()) => app.set_status_notice(crate::tui::i18n::refreshing_model_list()),
                         Err(error) => {
                             app.pending_remote_model_refresh_snapshot = None;
                             app.push_display_message(DisplayMessage::error(format!(
                                 "Failed to refresh model list: {}",
                                 error
                             )));
-                            app.set_status_notice("Model list refresh failed");
+                            app.set_status_notice(crate::tui::i18n::model_list_refresh_failed());
                         }
                     }
                     return Ok(());
@@ -1028,7 +1028,7 @@ async fn handle_remote_key_internal(
                     // catalog cache exists (otherwise every row is a
                     // placeholder "remote-catalog" entry).
                     let _ = remote.request_model_catalog().await;
-                    app.set_status_notice("Refreshing model catalog...");
+                    app.set_status_notice(crate::tui::i18n::refreshing_model_catalog());
                     app.open_model_picker();
                     return Ok(());
                 }
@@ -1072,7 +1072,7 @@ async fn handle_remote_key_internal(
                             "Subagent model reset to inherit the current model ({}).",
                             current_model
                         )));
-                        app.set_status_notice("Subagent model: inherit");
+                        app.set_status_notice(crate::tui::i18n::subagent_model_inherit());
                         return Ok(());
                     }
                     remote.set_subagent_model(Some(rest.to_string())).await?;
@@ -1104,7 +1104,7 @@ async fn handle_remote_key_internal(
                                 )
                                 .await?;
                             app.subagent_status = Some("starting subagent".to_string());
-                            app.set_status_notice("Running subagent");
+                            app.set_status_notice(crate::tui::i18n::running_subagent());
                         }
                         Err(error) => {
                             app.push_display_message(DisplayMessage::error(format!(
@@ -1354,7 +1354,7 @@ async fn handle_remote_key_internal(
                         .set_feature(crate::protocol::FeatureToggle::Autoreview, true)
                         .await?;
                     app.set_autoreview_feature_enabled(true);
-                    app.set_status_notice("Autoreview: ON");
+                    app.set_status_notice(crate::tui::i18n::autoreview_on());
                     app.push_display_message(DisplayMessage::system(
                         "Autoreview enabled for this session.".to_string(),
                     ));
@@ -1366,7 +1366,7 @@ async fn handle_remote_key_internal(
                         .set_feature(crate::protocol::FeatureToggle::Autoreview, false)
                         .await?;
                     app.set_autoreview_feature_enabled(false);
-                    app.set_status_notice("Autoreview: OFF");
+                    app.set_status_notice(crate::tui::i18n::autoreview_off());
                     app.push_display_message(DisplayMessage::system(
                         "Autoreview disabled for this session.".to_string(),
                     ));
@@ -1385,7 +1385,7 @@ async fn handle_remote_key_internal(
                         None,
                     );
                     if app.is_processing {
-                        app.set_status_notice("Autoreview queued");
+                        app.set_status_notice(crate::tui::i18n::autoreview_queued());
                     } else {
                         app.pending_split_request = false;
                         begin_remote_split_launch(app, "Autoreview");
@@ -1401,7 +1401,7 @@ async fn handle_remote_key_internal(
                                 "Failed to launch autoreview session: {}",
                                 error
                             )));
-                            app.set_status_notice("Autoreview launch failed");
+                            app.set_status_notice(crate::tui::i18n::autoreview_launch_failed());
                         }
                     }
                     return Ok(());
@@ -1412,7 +1412,7 @@ async fn handle_remote_key_internal(
                         .set_feature(crate::protocol::FeatureToggle::Autojudge, true)
                         .await?;
                     app.set_autojudge_feature_enabled(true);
-                    app.set_status_notice("Autojudge: ON");
+                    app.set_status_notice(crate::tui::i18n::autojudge_on());
                     app.push_display_message(DisplayMessage::system(
                         "Autojudge enabled for this session.".to_string(),
                     ));
@@ -1424,7 +1424,7 @@ async fn handle_remote_key_internal(
                         .set_feature(crate::protocol::FeatureToggle::Autojudge, false)
                         .await?;
                     app.set_autojudge_feature_enabled(false);
-                    app.set_status_notice("Autojudge: OFF");
+                    app.set_status_notice(crate::tui::i18n::autojudge_off());
                     app.push_display_message(DisplayMessage::system(
                         "Autojudge disabled for this session.".to_string(),
                     ));
@@ -1443,7 +1443,7 @@ async fn handle_remote_key_internal(
                         None,
                     );
                     if app.is_processing {
-                        app.set_status_notice("Autojudge queued");
+                        app.set_status_notice(crate::tui::i18n::autojudge_queued());
                     } else {
                         app.pending_split_request = false;
                         begin_remote_split_launch(app, "Autojudge");
@@ -1459,7 +1459,7 @@ async fn handle_remote_key_internal(
                                 "Failed to launch autojudge session: {}",
                                 error
                             )));
-                            app.set_status_notice("Autojudge launch failed");
+                            app.set_status_notice(crate::tui::i18n::autojudge_launch_failed());
                         }
                     }
                     return Ok(());
@@ -1483,7 +1483,7 @@ async fn handle_remote_key_internal(
                         provider_key_override,
                     );
                     if app.is_processing {
-                        app.set_status_notice("Review queued");
+                        app.set_status_notice(crate::tui::i18n::review_queued());
                     } else {
                         app.pending_split_request = false;
                         begin_remote_split_launch(app, "Review");
@@ -1499,7 +1499,7 @@ async fn handle_remote_key_internal(
                                 "Failed to launch review session: {}",
                                 error
                             )));
-                            app.set_status_notice("Review launch failed");
+                            app.set_status_notice(crate::tui::i18n::review_launch_failed());
                         }
                     }
                     return Ok(());
@@ -1523,7 +1523,7 @@ async fn handle_remote_key_internal(
                         provider_key_override,
                     );
                     if app.is_processing {
-                        app.set_status_notice("Judge queued");
+                        app.set_status_notice(crate::tui::i18n::judge_queued());
                     } else {
                         app.pending_split_request = false;
                         begin_remote_split_launch(app, "Judge");
@@ -1539,7 +1539,7 @@ async fn handle_remote_key_internal(
                                 "Failed to launch judge session: {}",
                                 error
                             )));
-                            app.set_status_notice("Judge launch failed");
+                            app.set_status_notice(crate::tui::i18n::judge_launch_failed());
                         }
                     }
                     return Ok(());
@@ -1607,7 +1607,7 @@ async fn handle_remote_key_internal(
                         .set_feature(crate::protocol::FeatureToggle::Memory, true)
                         .await?;
                     app.set_memory_feature_enabled(true);
-                    app.set_status_notice("Memory: ON");
+                    app.set_status_notice(crate::tui::i18n::memory_on());
                     app.push_display_message(DisplayMessage::system(
                         "Memory feature enabled for this session.".to_string(),
                     ));
@@ -1619,7 +1619,7 @@ async fn handle_remote_key_internal(
                         .set_feature(crate::protocol::FeatureToggle::Memory, false)
                         .await?;
                     app.set_memory_feature_enabled(false);
-                    app.set_status_notice("Memory: OFF");
+                    app.set_status_notice(crate::tui::i18n::memory_off());
                     app.push_display_message(DisplayMessage::system(
                         "Memory feature disabled for this session.".to_string(),
                     ));
@@ -1649,7 +1649,7 @@ async fn handle_remote_key_internal(
                     crate::tui::mermaid::clear_active_diagrams();
                     app.is_processing = false;
                     app.status = ProcessingStatus::Idle;
-                    app.set_status_notice("Session cleared");
+                    app.set_status_notice(crate::tui::i18n::session_cleared());
                     return Ok(());
                 }
 
@@ -1744,7 +1744,7 @@ async fn handle_remote_key_internal(
                         .set_feature(crate::protocol::FeatureToggle::Swarm, true)
                         .await?;
                     app.set_swarm_feature_enabled(true);
-                    app.set_status_notice("Swarm: ON");
+                    app.set_status_notice(crate::tui::i18n::swarm_on());
                     app.push_display_message(DisplayMessage::system(
                         "Swarm feature enabled for this session.".to_string(),
                     ));
@@ -1756,7 +1756,7 @@ async fn handle_remote_key_internal(
                         .set_feature(crate::protocol::FeatureToggle::Swarm, false)
                         .await?;
                     app.set_swarm_feature_enabled(false);
-                    app.set_status_notice("Swarm: OFF");
+                    app.set_status_notice(crate::tui::i18n::swarm_off());
                     app.push_display_message(DisplayMessage::system(
                         "Swarm feature disabled for this session.".to_string(),
                     ));
@@ -1821,7 +1821,7 @@ async fn handle_remote_key_internal(
                         )
                     };
                     app.push_display_message(DisplayMessage::system(msg));
-                    app.set_status_notice("Session saved");
+                    app.set_status_notice(crate::tui::i18n::session_saved());
                     return Ok(());
                 }
 
@@ -1841,7 +1841,7 @@ async fn handle_remote_key_internal(
                         "Removed bookmark from session {}.",
                         name,
                     )));
-                    app.set_status_notice("Bookmark removed");
+                    app.set_status_notice(crate::tui::i18n::bookmark_removed());
                     return Ok(());
                 }
 
@@ -1856,12 +1856,12 @@ async fn handle_remote_key_internal(
 
                     if title == "--clear" {
                         remote.rename_session(None).await?;
-                        app.set_status_notice("Clearing session name...");
+                        app.set_status_notice(crate::tui::i18n::clearing_session_name());
                         return Ok(());
                     }
 
                     remote.rename_session(Some(title.to_string())).await?;
-                    app.set_status_notice("Renaming session...");
+                    app.set_status_notice(crate::tui::i18n::renaming_session());
                     return Ok(());
                 }
 
@@ -1870,7 +1870,7 @@ async fn handle_remote_key_internal(
                         app.push_display_message(DisplayMessage::system(
                             "A transfer is already pending.".to_string(),
                         ));
-                        app.set_status_notice("Transfer already pending");
+                        app.set_status_notice(crate::tui::i18n::transfer_already_pending());
                         return Ok(());
                     }
 
@@ -1886,7 +1886,7 @@ async fn handle_remote_key_internal(
                                     "Queued /transfer. The current session will be asked to pause, then the compacted handoff will open in a new window."
                                         .to_string(),
                                 ));
-                                app.set_status_notice("Transfer queued after current turn");
+                                app.set_status_notice(crate::tui::i18n::transfer_queued_after_current_turn());
                             }
                             Err(error) => {
                                 app.pending_split_label = None;
@@ -1894,7 +1894,7 @@ async fn handle_remote_key_internal(
                                     "Failed to queue transfer pause: {}",
                                     error
                                 )));
-                                app.set_status_notice("Transfer queue failed");
+                                app.set_status_notice(crate::tui::i18n::transfer_queue_failed());
                             }
                         }
                     } else {
@@ -1909,7 +1909,7 @@ async fn handle_remote_key_internal(
                                 "Failed to launch transfer session: {}",
                                 error
                             )));
-                            app.set_status_notice("Transfer launch failed");
+                            app.set_status_notice(crate::tui::i18n::transfer_launch_failed());
                         }
                     }
                     return Ok(());
@@ -2052,7 +2052,7 @@ async fn handle_remote_key_internal(
                         app.provider.set_premium_mode(PremiumMode::Normal);
                         let _ = remote.set_premium_mode(PremiumMode::Normal as u8).await;
                         let _ = crate::config::Config::set_copilot_premium(None);
-                        app.set_status_notice("Premium: normal");
+                        app.set_status_notice(crate::tui::i18n::premium_normal());
                         app.push_display_message(DisplayMessage::system(
                             "Premium request mode reset to normal. (saved to config)".to_string(),
                         ));
@@ -2068,7 +2068,7 @@ async fn handle_remote_key_internal(
                         app.provider.set_premium_mode(PremiumMode::Normal);
                         let _ = remote.set_premium_mode(PremiumMode::Normal as u8).await;
                         let _ = crate::config::Config::set_copilot_premium(None);
-                        app.set_status_notice("Premium: normal");
+                        app.set_status_notice(crate::tui::i18n::premium_normal());
                         app.push_display_message(DisplayMessage::system(
                             "Premium request mode reset to normal. (saved to config)".to_string(),
                         ));
@@ -2105,7 +2105,7 @@ async fn handle_remote_key_internal(
                         }
                         Ok(app_mod::commands::PokeCommand::Off) => {
                             let cleared = app_mod::commands::disable_auto_poke(app);
-                            app.set_status_notice("Poke: OFF");
+                            app.set_status_notice(crate::tui::i18n::poke_off());
                             app.push_display_message(DisplayMessage::system(
                                 app_mod::commands::poke_disabled_message(cleared),
                             ));
@@ -2157,7 +2157,7 @@ async fn handle_remote_key_internal(
                     let prompt = app_mod::commands::build_plan_prompt(command.goal.as_deref());
                     if app.is_processing {
                         remote.cancel_with_reason("slash_plan").await?;
-                        app.set_status_notice("Interrupting for /plan...");
+                        app.set_status_notice(crate::tui::i18n::interrupting_for_plan());
                         app.push_display_message(DisplayMessage::system(
                             app_mod::commands::plan_launch_notice(command.goal.as_deref(), true),
                         ));
@@ -2214,7 +2214,7 @@ async fn handle_remote_key_internal(
 
                             if app.is_processing {
                                 remote.cancel_with_reason("slash_improve_resume").await?;
-                                app.set_status_notice("Interrupting for /improve resume...");
+                                app.set_status_notice(crate::tui::i18n::interrupting_for_improve_resume());
                                 app.push_display_message(DisplayMessage::system(format!(
                                     "♻️ Interrupting and resuming {}...",
                                     mode.status_label()
@@ -2280,7 +2280,7 @@ async fn handle_remote_key_internal(
                             let stop_prompt = app_mod::commands::improve_stop_prompt();
                             if app.is_processing {
                                 remote.cancel_with_reason("slash_improve_stop").await?;
-                                app.set_status_notice("Interrupting for /improve stop...");
+                                app.set_status_notice(crate::tui::i18n::interrupting_for_improve_stop());
                                 app.push_display_message(DisplayMessage::system(
                                     app_mod::commands::improve_stop_notice(true),
                                 ));
@@ -2396,7 +2396,7 @@ async fn handle_remote_key_internal(
 
                             if app.is_processing {
                                 remote.cancel_with_reason("slash_refactor_resume").await?;
-                                app.set_status_notice("Interrupting for /refactor resume...");
+                                app.set_status_notice(crate::tui::i18n::interrupting_for_refactor_resume());
                                 app.push_display_message(DisplayMessage::system(format!(
                                     "♻️ Interrupting and resuming {}...",
                                     mode.status_label()
@@ -2462,7 +2462,7 @@ async fn handle_remote_key_internal(
                             let stop_prompt = app_mod::commands::refactor_stop_prompt();
                             if app.is_processing {
                                 remote.cancel_with_reason("slash_refactor_stop").await?;
-                                app.set_status_notice("Interrupting for /refactor stop...");
+                                app.set_status_notice(crate::tui::i18n::interrupting_for_refactor_stop());
                                 app.push_display_message(DisplayMessage::system(
                                     app_mod::commands::refactor_stop_notice(true),
                                 ));
@@ -2585,9 +2585,9 @@ async fn handle_remote_key_internal(
                 remote.cancel_with_reason("keyboard_escape").await?;
                 if disabled_auto_poke {
                     app_mod::commands::disable_auto_poke(app);
-                    app.set_status_notice("Interrupting... Auto-poke OFF");
+                    app.set_status_notice(crate::tui::i18n::interrupting_auto_poke_off());
                 } else {
-                    app.set_status_notice("Interrupting...");
+                    app.set_status_notice(crate::tui::i18n::interrupting());
                 }
             } else {
                 app.follow_chat_bottom();

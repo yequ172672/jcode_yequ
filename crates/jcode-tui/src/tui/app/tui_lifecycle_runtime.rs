@@ -277,7 +277,7 @@ impl App {
                     self.push_display_message(DisplayMessage::error(msg));
                 }
                 if successes == 0 {
-                    self.set_status_notice("MCP: all connections failed");
+                    self.set_status_notice(crate::tui::i18n::mcp_all_connections_failed());
                 }
             }
 
@@ -574,7 +574,7 @@ pub(super) fn handle_dev_command(app: &mut App, trimmed: &str) -> bool {
             app.push_display_message(DisplayMessage::system(
                 "Onboarding preview is only available while idle.".to_string(),
             ));
-            app.set_status_notice("Onboarding preview unavailable while busy");
+            app.set_status_notice(crate::tui::i18n::onboarding_preview_unavailable_while_busy());
             return true;
         }
 
@@ -590,10 +590,10 @@ pub(super) fn handle_dev_command(app: &mut App, trimmed: &str) -> bool {
             app.clear_input_undo_history();
             app.follow_chat_bottom();
             app.force_full_redraw = true;
-            app.set_status_notice("Onboarding preview: on");
+            app.set_status_notice(crate::tui::i18n::onboarding_preview_on());
         } else {
             app.force_full_redraw = true;
-            app.set_status_notice("Onboarding preview: off");
+            app.set_status_notice(crate::tui::i18n::onboarding_preview_off());
         }
         return true;
     }
@@ -690,7 +690,7 @@ pub(super) fn handle_dev_command(app: &mut App, trimmed: &str) -> bool {
         if trimmed == "/z" {
             app.provider.set_premium_mode(PremiumMode::Normal);
             let _ = crate::config::Config::set_copilot_premium(None);
-            app.set_status_notice("Premium: normal");
+            app.set_status_notice(crate::tui::i18n::premium_normal());
             app.push_display_message(DisplayMessage::system(
                 "Premium request mode reset to normal. (saved to config)".to_string(),
             ));
@@ -705,7 +705,7 @@ pub(super) fn handle_dev_command(app: &mut App, trimmed: &str) -> bool {
         if current == mode {
             app.provider.set_premium_mode(PremiumMode::Normal);
             let _ = crate::config::Config::set_copilot_premium(None);
-            app.set_status_notice("Premium: normal");
+            app.set_status_notice(crate::tui::i18n::premium_normal());
             app.push_display_message(DisplayMessage::system(
                 "Premium request mode reset to normal. (saved to config)".to_string(),
             ));

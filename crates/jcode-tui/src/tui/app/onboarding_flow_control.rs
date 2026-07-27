@@ -249,7 +249,7 @@ impl App {
     pub(super) fn onboarding_start_default_login(&mut self) {
         crate::telemetry::record_setup_step_once("login_picker_opened");
         self.start_login_provider(crate::provider_catalog::OPENAI_LOGIN_PROVIDER);
-        self.set_status_notice("Login: opening OpenAI sign-in (or type /login for others)");
+        self.set_status_notice(crate::tui::i18n::login_opening_openai_sign_in_or());
     }
 
     /// Advance out of a login phase once credentials are available. Prompt and
@@ -781,7 +781,7 @@ impl App {
             // The user declined every detected login. Fall back to manual login
             // so they can still authenticate.
             self.onboarding_import_in_progress = None;
-            self.set_status_notice("No logins imported. Press Enter to choose a provider.");
+            self.set_status_notice(crate::tui::i18n::no_logins_imported_press_enter_to());
             return;
         }
 
@@ -801,7 +801,7 @@ impl App {
             });
         // Kick off the import on the runtime; the LoginCompleted event advances
         // onboarding and activates the provider.
-        self.set_status_notice("Login: importing selected logins...");
+        self.set_status_notice(crate::tui::i18n::login_importing_selected_logins());
         // Grab the runtime handle explicitly: this path is reachable straight
         // from a key handler (Enter/y on the summary screen), and a bare
         // `tokio::spawn` would panic if no runtime is running (tests, exotic
@@ -873,7 +873,7 @@ impl App {
             };
         }
         self.onboarding_prefetch_recent_project();
-        self.set_status_notice("Choose a suggested review or start a new session (↑↓, Enter)");
+        self.set_status_notice(crate::tui::i18n::choose_a_suggested_review_or_start());
     }
 
     /// Formatted copy shown above the two first-run actions.
@@ -1021,7 +1021,7 @@ impl App {
         self.follow_chat_bottom_for_typing();
         if self.is_remote {
             super::input::queue_message(self);
-            self.set_status_notice("Architecture review queued");
+            self.set_status_notice(crate::tui::i18n::architecture_review_queued());
         } else {
             self.submit_input();
         }
@@ -1043,7 +1043,7 @@ impl App {
         let suggestions = self.suggestion_prompts();
         if suggestions.is_empty() {
             self.onboarding_finish();
-            self.set_status_notice("You're all set, type anything to start");
+            self.set_status_notice(crate::tui::i18n::you_re_all_set_type_anything());
             self.onboarding_validate_default_model();
             return;
         }
@@ -1056,7 +1056,7 @@ impl App {
             suggestions.len()
         ));
         self.push_display_message(DisplayMessage::system(body));
-        self.set_status_notice("Try a suggestion, or type anything to start");
+        self.set_status_notice(crate::tui::i18n::try_a_suggestion_or_type_anything());
         self.onboarding_validate_default_model();
     }
 

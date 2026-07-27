@@ -127,7 +127,7 @@ impl App {
                     "Failed to switch provider to {}: {}",
                     pending.prompt.to_label, error
                 )));
-                self.set_status_notice("Provider switch failed");
+                self.set_status_notice(crate::tui::i18n::provider_switch_failed());
                 true
             }
         }
@@ -532,7 +532,7 @@ impl App {
                     "Failed to switch to {}: {}",
                     offer.target_label, error
                 )));
-                self.set_status_notice("Fallback switch failed");
+                self.set_status_notice(crate::tui::i18n::fallback_switch_failed());
                 true
             }
         }
@@ -544,7 +544,7 @@ impl App {
             self.push_display_message(DisplayMessage::error(
                 "Model switching is not available for this provider.",
             ));
-            self.set_status_notice("Model switching not available");
+            self.set_status_notice(crate::tui::i18n::model_switching_not_available());
             return;
         }
 
@@ -578,7 +578,7 @@ impl App {
                     "Failed to switch model: {}",
                     e
                 )));
-                self.set_status_notice("Model switch failed");
+                self.set_status_notice(crate::tui::i18n::model_switch_failed());
             }
         }
     }
@@ -599,7 +599,7 @@ impl App {
         let efforts =
             inferred_reasoning_efforts(provider_name.as_deref(), provider_model.as_deref());
         if efforts.is_empty() {
-            self.set_status_notice("Reasoning effort not available for this provider");
+            self.set_status_notice(crate::tui::i18n::reasoning_effort_not_available_for_this());
             return;
         }
 
@@ -827,7 +827,7 @@ impl App {
         self.cursor_pos = self.input.len();
         self.reset_tab_completion();
         self.sync_model_picker_preview_from_input();
-        self.set_status_notice("Prompt restored to input after error");
+        self.set_status_notice(crate::tui::i18n::prompt_restored_to_input_after_error());
     }
 
     pub(super) fn handle_turn_error(&mut self, error: impl Into<String>) {
@@ -1173,9 +1173,9 @@ impl App {
             false,
         ));
         if results.is_empty() {
-            self.set_status_notice("Usage → no connected providers");
+            self.set_status_notice(crate::tui::i18n::usage_no_connected_providers());
         } else {
-            self.set_status_notice("Usage → updated");
+            self.set_status_notice(crate::tui::i18n::usage_updated());
         }
     }
 
@@ -1195,12 +1195,12 @@ impl App {
 
         if progress.done {
             if progress.results.is_empty() {
-                self.set_status_notice("Usage → no connected providers");
+                self.set_status_notice(crate::tui::i18n::usage_no_connected_providers());
             } else {
-                self.set_status_notice("Usage → updated");
+                self.set_status_notice(crate::tui::i18n::usage_updated());
             }
         } else if progress.from_cache && progress.total == 0 {
-            self.set_status_notice("Usage → showing cached data, refreshing");
+            self.set_status_notice(crate::tui::i18n::usage_showing_cached_data_refreshing());
         } else if progress.total > 0 {
             self.set_status_notice(format!(
                 "Usage → refreshing {}/{}",
@@ -1208,7 +1208,7 @@ impl App {
                 progress.total
             ));
         } else {
-            self.set_status_notice("Usage → refreshing");
+            self.set_status_notice(crate::tui::i18n::usage_refreshing());
         }
     }
 
@@ -1444,7 +1444,7 @@ impl App {
 
         self.context_warning_shown = false;
         self.last_stream_error = None;
-        self.set_status_notice("Fix applied");
+        self.set_status_notice(crate::tui::i18n::fix_applied());
 
         let mut content = String::from("Fix Results:\n");
         if actions.is_empty() {
@@ -1483,7 +1483,7 @@ pub(super) fn handle_model_command(app: &mut App, trimmed: &str) -> bool {
                 Some("Refreshing model list..."),
             ),
         ));
-        app.set_status_notice("Refreshing model list...");
+        app.set_status_notice(crate::tui::i18n::refreshing_model_list());
         let provider = app.provider.clone();
 
         if let Ok(handle) = tokio::runtime::Handle::try_current() {
@@ -1546,7 +1546,7 @@ pub(super) fn handle_model_command(app: &mut App, trimmed: &str) -> bool {
                     &e.to_string(),
                     app.is_remote,
                 )));
-                app.set_status_notice("Model switch failed");
+                app.set_status_notice(crate::tui::i18n::model_switch_failed());
             }
         }
         return true;
@@ -1903,7 +1903,7 @@ impl App {
                     "Failed to refresh model list: {}",
                     error
                 )));
-                self.set_status_notice("Model list refresh failed");
+                self.set_status_notice(crate::tui::i18n::model_list_refresh_failed());
             }
         }
     }

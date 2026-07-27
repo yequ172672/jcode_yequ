@@ -192,7 +192,7 @@ pub(super) fn stop_auto_poke_for_non_retryable_error(app: &mut App, error: &str)
             )
         }
     )));
-    app.set_status_notice("Poke stopped: non-retryable error");
+    app.set_status_notice(crate::tui::i18n::poke_stopped_non_retryable_error());
     true
 }
 
@@ -240,14 +240,14 @@ pub(super) fn activate_auto_poke(app: &mut App) -> PokeActivation {
     // breaker its full budget again (the user likely rephrased the task).
     app.consecutive_guardrail_stops = 0;
     app.turn_guardrail_stopped = false;
-    app.set_status_notice("Poke: ON");
+    app.set_status_notice(crate::tui::i18n::poke_on());
 
     if incomplete.is_empty() {
         return PokeActivation::EnabledNoIncomplete;
     }
 
     if app.is_processing {
-        app.set_status_notice("Poke queued after current turn");
+        app.set_status_notice(crate::tui::i18n::poke_queued_after_current_turn());
         PokeActivation::Queued
     } else {
         let incomplete_count = incomplete.len();
@@ -319,7 +319,7 @@ pub(super) fn activate_auto_poke_local(app: &mut App) {
 pub(super) fn toggle_auto_poke_hotkey_local(app: &mut App) {
     if app.auto_poke_incomplete_todos {
         let cleared = disable_auto_poke(app);
-        app.set_status_notice("Poke: OFF");
+        app.set_status_notice(crate::tui::i18n::poke_off());
         app.push_display_message(DisplayMessage::system(poke_disabled_message(cleared)));
     } else {
         activate_auto_poke_local(app);
@@ -438,21 +438,21 @@ pub(super) fn poll_local_transfer_prepare(app: &mut App) -> bool {
                                 "↗ Transfer launched in {}.",
                                 prepared.session_name
                             )));
-                            app.set_status_notice("Transfer launched");
+                            app.set_status_notice(crate::tui::i18n::transfer_launched());
                         }
                         Ok(false) => {
                             app.push_display_message(DisplayMessage::system(format!(
                                 "↗ Transfer session {} created.\n\nNo terminal was opened automatically. Resume manually:\n\n  jcode --resume {}",
                                 prepared.session_name, prepared.session_id
                             )));
-                            app.set_status_notice("Transfer session created");
+                            app.set_status_notice(crate::tui::i18n::transfer_session_created());
                         }
                         Err(error) => {
                             app.push_display_message(DisplayMessage::error(format!(
                                 "Transfer session {} was created but failed to open a window: {}\n\nResume manually: jcode --resume {}",
                                 prepared.session_name, error, prepared.session_id
                             )));
-                            app.set_status_notice("Transfer open failed");
+                            app.set_status_notice(crate::tui::i18n::transfer_open_failed());
                         }
                     }
                 }
@@ -461,7 +461,7 @@ pub(super) fn poll_local_transfer_prepare(app: &mut App) -> bool {
                         "Failed to prepare transfer session: {}",
                         error
                     )));
-                    app.set_status_notice("Transfer failed");
+                    app.set_status_notice(crate::tui::i18n::transfer_failed());
                 }
             }
             true
@@ -473,7 +473,7 @@ pub(super) fn poll_local_transfer_prepare(app: &mut App) -> bool {
             app.push_display_message(DisplayMessage::error(
                 "Transfer preparation failed before returning a result.".to_string(),
             ));
-            app.set_status_notice("Transfer failed");
+            app.set_status_notice(crate::tui::i18n::transfer_failed());
             true
         }
     }
@@ -492,7 +492,7 @@ pub(super) fn maybe_begin_pending_local_transfer(app: &mut App) -> bool {
             app.push_display_message(DisplayMessage::system(
                 "Preparing transferred session with compacted context...".to_string(),
             ));
-            app.set_status_notice("Preparing transfer");
+            app.set_status_notice(crate::tui::i18n::preparing_transfer());
         }
         Err(error) => {
             app.pending_transfer_request = false;
@@ -500,7 +500,7 @@ pub(super) fn maybe_begin_pending_local_transfer(app: &mut App) -> bool {
                 "Failed to start transfer preparation: {}",
                 error
             )));
-            app.set_status_notice("Transfer failed");
+            app.set_status_notice(crate::tui::i18n::transfer_failed());
         }
     }
     true
@@ -511,7 +511,7 @@ pub(super) fn handle_transfer_command_local(app: &mut App) {
         app.push_display_message(DisplayMessage::system(
             "A transfer is already pending.".to_string(),
         ));
-        app.set_status_notice("Transfer already pending");
+        app.set_status_notice(crate::tui::i18n::transfer_already_pending());
         return;
     }
 
@@ -522,7 +522,7 @@ pub(super) fn handle_transfer_command_local(app: &mut App) {
             "Queued /transfer. The current session will be asked to pause, then the compacted handoff will open in a new window."
                 .to_string(),
         ));
-        app.set_status_notice("Transfer queued after current turn");
+        app.set_status_notice(crate::tui::i18n::transfer_queued_after_current_turn());
     } else {
         let _ = maybe_begin_pending_local_transfer(app);
     }
@@ -665,7 +665,7 @@ fn launch_manual_subagent(app: &mut App, spec: ManualSubagentSpec) {
     let message_id = app.session.add_message(Role::Assistant, content_blocks);
     let _ = app.session.save();
     app.subagent_status = Some("starting subagent".to_string());
-    app.set_status_notice("Running subagent");
+    app.set_status_notice(crate::tui::i18n::running_subagent());
 
     let registry = app.registry.clone();
     let session_id = app.session.id.clone();
@@ -828,9 +828,9 @@ pub(super) fn handle_cancel_command(app: &mut App, trimmed: &str) -> bool {
         app.pending_soft_interrupts.clear();
         app.pending_soft_interrupt_requests.clear();
         if app.cancel_overnight_for_interrupt() {
-            app.set_status_notice("Interrupting... Overnight cancelled");
+            app.set_status_notice(crate::tui::i18n::interrupting_overnight_cancelled());
         } else {
-            app.set_status_notice("Interrupting...");
+            app.set_status_notice(crate::tui::i18n::interrupting());
         }
     } else {
         app.push_display_message(DisplayMessage::system(
@@ -891,7 +891,7 @@ pub(super) fn handle_keys_command(app: &mut App, trimmed: &str) -> bool {
     {
         app.set_status_notice(status);
     } else {
-        app.set_status_notice("No keybinding conflicts detected");
+        app.set_status_notice(crate::tui::i18n::no_keybinding_conflicts_detected());
     }
     true
 }
@@ -1111,7 +1111,7 @@ pub(super) fn handle_pending_ssh_remote_target(app: &mut App, name: String, inpu
         app.push_display_message(DisplayMessage::system(
             "SSH remote setup cancelled.".to_string(),
         ));
-        app.set_status_notice("SSH setup cancelled");
+        app.set_status_notice(crate::tui::i18n::ssh_setup_cancelled());
         return;
     }
     match crate::ssh_remote::upsert_profile(&name, target) {
@@ -1144,7 +1144,7 @@ Security model
 Type cancel to stop setup.",
         name, name
     )));
-    app.set_status_notice("SSH setup 1/4: enter target");
+    app.set_status_notice(crate::tui::i18n::ssh_setup_1_4_enter_target());
 }
 
 fn show_ssh_remotes(app: &mut App) {
@@ -1240,7 +1240,7 @@ Security model
   - Close or disconnect later with /ssh disconnect {}.",
                 profile.name, profile.ssh_target, profile.name
             )));
-            app.set_status_notice("SSH setup 2/4: login terminal opened");
+            app.set_status_notice(crate::tui::i18n::ssh_setup_2_4_login_terminal());
         }
         Ok(false) => app.push_display_message(DisplayMessage::system(format!(
             "SSH remote {}
@@ -1273,7 +1273,7 @@ fn disconnect_ssh_remote(app: &mut App, name: &str) {
                     "Disconnected SSH remote {}.",
                     name
                 )));
-                app.set_status_notice("SSH disconnected");
+                app.set_status_notice(crate::tui::i18n::ssh_disconnected());
             }
             Ok(false) => app.push_display_message(DisplayMessage::system(format!(
                 "SSH remote {} did not have an active ControlMaster connection.",
@@ -1397,7 +1397,7 @@ pub(super) fn fork_session_with_prompt_local(app: &mut App, prompt: Option<&str>
             "Failed to fork session: {}",
             error
         )));
-        app.set_status_notice("Fork failed");
+        app.set_status_notice(crate::tui::i18n::fork_failed());
     }
 }
 
@@ -1429,7 +1429,7 @@ fn handle_catchup_command(app: &mut App, trimmed: &str) -> bool {
         }
         "next" => {
             if app.is_processing {
-                app.set_status_notice("Finish current work before Catch Up");
+                app.set_status_notice(crate::tui::i18n::finish_current_work_before_catch_up());
                 return true;
             }
             let candidates = load_catchup_candidates(app);
@@ -1438,7 +1438,7 @@ fn handle_catchup_command(app: &mut App, trimmed: &str) -> bool {
                 app.push_display_message(DisplayMessage::system(
                     "No sessions currently need catch up.".to_string(),
                 ));
-                app.set_status_notice("Catch Up: none waiting");
+                app.set_status_notice(crate::tui::i18n::catch_up_none_waiting());
                 return true;
             };
 
@@ -1479,14 +1479,14 @@ fn handle_back_command(app: &mut App, trimmed: &str) -> bool {
         return true;
     }
     if app.is_processing {
-        app.set_status_notice("Finish current work before going back");
+        app.set_status_notice(crate::tui::i18n::finish_current_work_before_going_back());
         return true;
     }
     let Some(target) = app.pop_catchup_return_target() else {
         app.push_display_message(DisplayMessage::system(
             "No previous Catch Up session is available.".to_string(),
         ));
-        app.set_status_notice("Back: empty");
+        app.set_status_notice(crate::tui::i18n::back_empty());
         return true;
     };
 
@@ -1602,7 +1602,7 @@ fn handle_git_command(app: &mut App, trimmed: &str) -> bool {
     let session_id = active_session_id(app);
     match git_command_repo_dir(app) {
         Ok(repo_dir) => {
-            app.set_status_notice("Git status loading...");
+            app.set_status_notice(crate::tui::i18n::git_status_loading());
             std::thread::spawn(move || {
                 let result = build_git_status_message_for_dir(repo_dir);
                 Bus::global().publish(BusEvent::GitStatusCompleted(GitStatusCompleted {
@@ -1653,14 +1653,14 @@ fn handle_transcript_command(app: &mut App, trimmed: &str) -> bool {
 
     if trimmed == "/transcript path" {
         app.push_display_message(DisplayMessage::system(transcript_path_message(&path)));
-        app.set_status_notice("Transcript path");
+        app.set_status_notice(crate::tui::i18n::transcript_path());
         return true;
     }
 
     match super::helpers::open_path_or_url_detached(&path) {
         Ok(()) => {
             app.push_display_message(DisplayMessage::system(transcript_opened_message(&path)));
-            app.set_status_notice("Transcript opened");
+            app.set_status_notice(crate::tui::i18n::transcript_opened());
         }
         Err(error) => app.push_display_message(DisplayMessage::error(format!(
             "Failed to open transcript file {}: {}",
@@ -1680,7 +1680,7 @@ pub(super) fn handle_git_status_completed(app: &mut App, completed: GitStatusCom
     match completed.result {
         Ok(message) => {
             app.push_display_message(DisplayMessage::system(message));
-            app.set_status_notice("Git status");
+            app.set_status_notice(crate::tui::i18n::git_status());
         }
         Err(error) => app.push_display_message(DisplayMessage::error(error)),
     }
@@ -1805,7 +1805,7 @@ pub(super) fn handle_session_command(app: &mut App, trimmed: &str) -> bool {
             )
         };
         app.push_display_message(DisplayMessage::system(msg));
-        app.set_status_notice("Session saved");
+        app.set_status_notice(crate::tui::i18n::session_saved());
         return true;
     }
 
@@ -1824,7 +1824,7 @@ pub(super) fn handle_session_command(app: &mut App, trimmed: &str) -> bool {
             "Removed bookmark from session {}.",
             name,
         )));
-        app.set_status_notice("Bookmark removed");
+        app.set_status_notice(crate::tui::i18n::bookmark_removed());
         return true;
     }
 
@@ -1853,7 +1853,7 @@ pub(super) fn handle_session_command(app: &mut App, trimmed: &str) -> bool {
                 "Cleared custom name. Session title is now {}.",
                 name,
             )));
-            app.set_status_notice("Session name cleared");
+            app.set_status_notice(crate::tui::i18n::session_name_cleared());
             return true;
         }
 
@@ -1871,7 +1871,7 @@ pub(super) fn handle_session_command(app: &mut App, trimmed: &str) -> bool {
             "Renamed session to {}.",
             title,
         )));
-        app.set_status_notice("Session renamed");
+        app.set_status_notice(crate::tui::i18n::session_renamed());
         return true;
     }
 
@@ -1907,7 +1907,7 @@ pub(super) fn handle_session_command(app: &mut App, trimmed: &str) -> bool {
 
     if trimmed == "/memory on" {
         app.set_memory_feature_enabled(true);
-        app.set_status_notice("Memory: ON");
+        app.set_status_notice(crate::tui::i18n::memory_on());
         app.push_display_message(DisplayMessage::system(
             "Memory feature enabled for this session.".to_string(),
         ));
@@ -1916,7 +1916,7 @@ pub(super) fn handle_session_command(app: &mut App, trimmed: &str) -> bool {
 
     if trimmed == "/memory off" {
         app.set_memory_feature_enabled(false);
-        app.set_status_notice("Memory: OFF");
+        app.set_status_notice(crate::tui::i18n::memory_off());
         app.push_display_message(DisplayMessage::system(
             "Memory feature disabled for this session.".to_string(),
         ));
@@ -1962,7 +1962,7 @@ pub(super) fn handle_session_command(app: &mut App, trimmed: &str) -> bool {
 
     if trimmed == "/swarm on" {
         app.set_swarm_feature_enabled(true);
-        app.set_status_notice("Swarm: ON");
+        app.set_status_notice(crate::tui::i18n::swarm_on());
         app.push_display_message(DisplayMessage::system(
             "Swarm feature enabled for this session.".to_string(),
         ));
@@ -1971,7 +1971,7 @@ pub(super) fn handle_session_command(app: &mut App, trimmed: &str) -> bool {
 
     if trimmed == "/swarm off" {
         app.set_swarm_feature_enabled(false);
-        app.set_status_notice("Swarm: OFF");
+        app.set_status_notice(crate::tui::i18n::swarm_off());
         app.push_display_message(DisplayMessage::system(
             "Swarm feature disabled for this session.".to_string(),
         ));
@@ -2136,7 +2136,7 @@ pub(super) fn handle_session_command(app: &mut App, trimmed: &str) -> bool {
             }
             Ok(PokeCommand::Off) => {
                 let cleared = disable_auto_poke(app);
-                app.set_status_notice("Poke: OFF");
+                app.set_status_notice(crate::tui::i18n::poke_off());
                 app.push_display_message(DisplayMessage::system(poke_disabled_message(cleared)));
             }
             Ok(PokeCommand::Trigger | PokeCommand::On) => {
@@ -2350,7 +2350,7 @@ fn handle_selfdev_command(app: &mut App, trimmed: &str) -> bool {
         match crate::tool::selfdev::selfdev_status_output() {
             Ok(output) => {
                 app.push_display_message(DisplayMessage::system(output.output));
-                app.set_status_notice("Self-dev status");
+                app.set_status_notice(crate::tui::i18n::self_dev_status());
             }
             Err(e) => app.push_display_message(DisplayMessage::error(format!(
                 "Failed to read self-dev status: {}",
@@ -2424,7 +2424,7 @@ fn handle_selfdev_command(app: &mut App, trimmed: &str) -> bool {
             }
 
             app.push_display_message(DisplayMessage::system(message));
-            app.set_status_notice("Self-dev");
+            app.set_status_notice(crate::tui::i18n::self_dev());
         }
         Err(e) => app.push_display_message(DisplayMessage::error(format!(
             "Failed to enter self-dev mode: {}",
@@ -2460,7 +2460,7 @@ pub(super) fn handle_goals_command(app: &mut App, trimmed: &str) -> bool {
                     count,
                     if count == 1 { "" } else { "s" }
                 )));
-                app.set_status_notice("Initiatives");
+                app.set_status_notice(crate::tui::i18n::initiatives());
             }
             Err(e) => app.push_display_message(DisplayMessage::error(format!(
                 "Failed to open initiatives overview: {}",
@@ -2569,13 +2569,13 @@ pub(super) fn handle_test_command(app: &mut App, trimmed: &str) -> bool {
         app.push_display_message(DisplayMessage::system(
             "Queued /test; verification will run after the current turn.".to_string(),
         ));
-        app.set_status_notice("Queued /test");
+        app.set_status_notice(crate::tui::i18n::queued_test());
     } else {
         app.pending_queued_dispatch = true;
         app.push_display_message(DisplayMessage::system(
             "Running /test verification orchestrator.".to_string(),
         ));
-        app.set_status_notice("Running /test");
+        app.set_status_notice(crate::tui::i18n::running_test());
     }
     true
 }
@@ -3022,7 +3022,7 @@ pub(super) fn handle_swarm_prompt_command(app: &mut App, trimmed: &str) -> bool 
                 editor,
                 path.display()
             )));
-            app.set_status_notice("Opened swarm prompt");
+            app.set_status_notice(crate::tui::i18n::opened_swarm_prompt());
         }
         Err(error) => app.push_display_message(DisplayMessage::error(format!(
             "Failed to launch editor '{}' for {}: {}",
@@ -3483,7 +3483,7 @@ pub(super) fn handle_feedback_command(app: &mut App, trimmed: &str) -> bool {
     app.push_display_message(DisplayMessage::system(
         "Thanks, recorded your feedback.".to_string(),
     ));
-    app.set_status_notice("Feedback recorded");
+    app.set_status_notice(crate::tui::i18n::feedback_recorded());
     true
 }
 

@@ -257,7 +257,7 @@ impl App {
     /// Render the `/subscribe` pitch into the transcript.
     pub(super) fn show_subscribe_pitch(&mut self) {
         self.push_display_message(DisplayMessage::system(subscribe_pitch_markdown()));
-        self.set_status_notice("Subscribe: /login jcode to start");
+        self.set_status_notice(crate::tui::i18n::subscribe_login_jcode_to_start());
     }
 }
 

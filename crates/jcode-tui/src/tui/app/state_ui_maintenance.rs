@@ -118,7 +118,7 @@ impl App {
                 crate::update::spawn_background_session_update(session_id);
             }
             crate::bus::ClientMaintenanceAction::Rebuild => {
-                self.set_status_notice("Starting background rebuild...");
+                self.set_status_notice(crate::tui::i18n::starting_background_rebuild());
                 self.set_client_maintenance_message(
                     action,
                     Self::client_maintenance_card_message(
@@ -443,20 +443,20 @@ Do not force-push or discard local commits without confirming they are already u
                 self.push_display_message(DisplayMessage::system(
                     "↗ Spawned a jcode agent to merge the diverged update.",
                 ));
-                self.set_status_notice("Merge agent launched");
+                self.set_status_notice(crate::tui::i18n::merge_agent_launched());
             }
             Ok(false) => {
                 self.push_display_message(DisplayMessage::system(
                     "Could not open a new terminal for the merge agent. Run `git pull` / `git rebase` manually, or start `jcode` in the repo and ask it to merge.",
                 ));
-                self.set_status_notice("No terminal available for merge agent");
+                self.set_status_notice(crate::tui::i18n::no_terminal_available_for_merge_agent());
             }
             Err(error) => {
                 self.push_display_message(DisplayMessage::error(format!(
                     "Failed to spawn merge agent: {}",
                     error
                 )));
-                self.set_status_notice("Merge agent failed to start");
+                self.set_status_notice(crate::tui::i18n::merge_agent_failed_to_start());
             }
         }
         true

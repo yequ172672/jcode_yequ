@@ -22,7 +22,7 @@ impl App {
         if let Some(status_notice) = restored.startup_status_notice {
             self.set_status_notice(status_notice);
         } else if self.submit_input_on_startup {
-            self.set_status_notice("Startup prompt queued");
+            self.set_status_notice(crate::tui::i18n::startup_prompt_queued());
         }
         if let Some((title, message)) = restored.startup_display_message {
             self.push_display_message(DisplayMessage::system(message).with_title(title));
@@ -58,7 +58,7 @@ impl App {
             let mut recovered_queue = recovered_followups;
             recovered_queue.append(&mut queued_messages);
             queued_messages = recovered_queue;
-            self.set_status_notice("Recovered pending prompts after reload");
+            self.set_status_notice(crate::tui::i18n::recovered_pending_prompts_after_reload());
         }
 
         self.queued_messages = queued_messages;
@@ -69,7 +69,7 @@ impl App {
                 // the queue must remain a wait-until-turn-end queue until the history
                 // bootstrap/Done event proves the remote turn is idle. The remote
                 // post-connect/history/tick paths will dispatch once it is safe.
-                self.set_status_notice("Restored queued follow-up after reload");
+                self.set_status_notice(crate::tui::i18n::restored_queued_follow_up_after_reload());
             } else {
                 self.is_processing = true;
                 self.status = ProcessingStatus::Sending;
@@ -303,7 +303,7 @@ impl App {
                 format!(" Cleared {cleared_pokes} queued auto-poke follow-up(s).")
             }
         )));
-        self.set_status_notice("Stopped: repeated auth failures");
+        self.set_status_notice(crate::tui::i18n::stopped_repeated_auth_failures());
         self.restore_failed_input_to_box();
         self.consecutive_credential_failures = 0;
     }

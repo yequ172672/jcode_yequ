@@ -17,7 +17,7 @@ impl App {
                         "Unknown provider {}.",
                         provider_id
                     )));
-                    self.set_status_notice("Account center unavailable");
+                    self.set_status_notice(crate::tui::i18n::account_center_unavailable());
                     return;
                 }
             },
@@ -314,7 +314,7 @@ impl App {
         self.inline_interactive_state = None;
         self.input.clear();
         self.cursor_pos = 0;
-        self.set_status_notice("Account center: choose an action");
+        self.set_status_notice(crate::tui::i18n::account_center_choose_an_action());
     }
 
     pub(crate) fn open_account_add_replace_flow(&mut self, provider_filter: Option<&str>) {
@@ -381,7 +381,7 @@ impl App {
         self.inline_interactive_state = None;
         self.input.clear();
         self.cursor_pos = 0;
-        self.set_status_notice("Account center: choose add/replace target");
+        self.set_status_notice(crate::tui::i18n::account_center_choose_add_replace_target());
     }
 
     pub(crate) fn open_account_picker(&mut self, provider_filter: Option<&str>) {
@@ -396,7 +396,7 @@ impl App {
                     "Inline /account picker is available for Claude and OpenAI accounts. Use /account claude or /account openai to choose explicitly.".to_string(),
                 ));
             }
-            self.set_status_notice("Account picker unavailable");
+            self.set_status_notice(crate::tui::i18n::account_picker_unavailable());
             return;
         };
 
@@ -1151,7 +1151,7 @@ impl App {
             self.push_display_message(DisplayMessage::system(
                 "Account action cancelled.".to_string(),
             ));
-            self.set_status_notice("Account: cancelled");
+            self.set_status_notice(crate::tui::i18n::account_cancelled());
             return;
         }
 

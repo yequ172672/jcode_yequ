@@ -30,7 +30,7 @@ impl App {
         {
             self.remove_display_message(idx);
             self.todo_card_rendered_hash = 0;
-            self.set_status_notice("Todos card dismissed");
+            self.set_status_notice(crate::tui::i18n::todos_card_dismissed());
             return;
         }
         self.show_todo_card();
@@ -55,7 +55,7 @@ impl App {
             self.remove_display_message(idx);
         }
         self.push_display_message(crate::tui::DisplayMessage::todos(content));
-        self.set_status_notice("Todos card");
+        self.set_status_notice(crate::tui::i18n::todos_card());
     }
 
     /// Live-refresh the inline todo card when the session todo list changed.
@@ -233,13 +233,13 @@ pub(super) fn handle_todos_view_command(app: &mut App, trimmed: &str) -> bool {
             let enabled = !app.todos_view_enabled();
             app.set_todos_view_enabled(enabled, true);
             if enabled {
-                app.set_status_notice("Todos panel: ON");
+                app.set_status_notice(crate::tui::i18n::todos_panel_on());
                 app.push_display_message(crate::tui::DisplayMessage::system(
                     "Todo screen enabled. The side panel now shows only this session's todo list."
                         .to_string(),
                 ));
             } else {
-                app.set_status_notice("Todos panel: OFF");
+                app.set_status_notice(crate::tui::i18n::todos_panel_off());
                 app.push_display_message(crate::tui::DisplayMessage::system(
                     "Todo screen disabled.".to_string(),
                 ));
@@ -247,7 +247,7 @@ pub(super) fn handle_todos_view_command(app: &mut App, trimmed: &str) -> bool {
         }
         "on" | "panel on" => {
             app.set_todos_view_enabled(true, true);
-            app.set_status_notice("Todos panel: ON");
+            app.set_status_notice(crate::tui::i18n::todos_panel_on());
             app.push_display_message(crate::tui::DisplayMessage::system(
                 "Todo screen enabled. The side panel now shows only this session's todo list."
                     .to_string(),
@@ -255,7 +255,7 @@ pub(super) fn handle_todos_view_command(app: &mut App, trimmed: &str) -> bool {
         }
         "off" | "panel off" => {
             app.set_todos_view_enabled(false, false);
-            app.set_status_notice("Todos panel: OFF");
+            app.set_status_notice(crate::tui::i18n::todos_panel_off());
             app.push_display_message(crate::tui::DisplayMessage::system(
                 "Todo screen disabled.".to_string(),
             ));

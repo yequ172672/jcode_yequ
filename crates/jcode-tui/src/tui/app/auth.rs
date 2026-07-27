@@ -265,12 +265,12 @@ impl App {
     pub(super) fn show_interactive_login(&mut self) {
         crate::telemetry::record_setup_step_once("login_picker_opened");
         self.open_login_picker_inline();
-        self.set_status_notice("Login: choose a provider");
+        self.set_status_notice(crate::tui::i18n::login_choose_a_provider());
     }
 
     pub(super) fn show_interactive_logout(&mut self) {
         self.open_logout_picker_inline();
-        self.set_status_notice("Logout: choose a provider");
+        self.set_status_notice(crate::tui::i18n::logout_choose_a_provider());
     }
 
     pub(super) fn start_logout_provider(
@@ -360,7 +360,7 @@ impl App {
                     "Failed to log out of {}: {}",
                     provider.display_name, err
                 )));
-                self.set_status_notice("Logout failed");
+                self.set_status_notice(crate::tui::i18n::logout_failed());
             }
         }
     }
@@ -485,13 +485,13 @@ impl App {
         self.push_display_message(DisplayMessage::system(message));
 
         if errors.is_empty() {
-            self.set_status_notice("Logout: all providers");
+            self.set_status_notice(crate::tui::i18n::logout_all_providers());
         } else {
             self.push_display_message(DisplayMessage::error(format!(
                 "Some logouts failed: {}",
                 errors.join("; ")
             )));
-            self.set_status_notice("Logout: completed with errors");
+            self.set_status_notice(crate::tui::i18n::logout_completed_with_errors());
         }
     }
 
@@ -534,7 +534,7 @@ impl App {
                         self.push_display_message(DisplayMessage::system(
                             "No importable external logins were found.".to_string(),
                         ));
-                        self.set_status_notice("Login: no external imports found");
+                        self.set_status_notice(crate::tui::i18n::login_no_external_imports_found());
                     }
                     Ok(candidates) => {
                         self.push_display_message(DisplayMessage::system(
@@ -542,7 +542,7 @@ impl App {
                                 &candidates,
                             ),
                         ));
-                        self.set_status_notice("Login: choose sources to import");
+                        self.set_status_notice(crate::tui::i18n::login_choose_sources_to_import());
                         self.pending_login = Some(PendingLogin::AutoImportSelection { candidates });
                     }
                     Err(err) => {
@@ -550,7 +550,7 @@ impl App {
                             "Failed to inspect external login sources: {}",
                             err
                         )));
-                        self.set_status_notice("Login: auto import failed");
+                        self.set_status_notice(crate::tui::i18n::login_auto_import_failed());
                     }
                 }
             }
@@ -608,7 +608,7 @@ impl App {
             "Jcode Account Login\n\nRequesting a secure browser approval flow. No email or API key will be requested in the terminal."
                 .to_string(),
         ));
-        self.set_status_notice("Jcode account: requesting browser approval");
+        self.set_status_notice(crate::tui::i18n::jcode_account_requesting_browser_approval());
         let session_id = self.session.id.clone();
         let Ok(handle) = tokio::runtime::Handle::try_current() else {
             self.push_display_message(DisplayMessage::error(
@@ -787,11 +787,11 @@ impl App {
                 "\n\nThe browser could not be opened automatically. Open the public URL above manually."
             }
         )));
-        self.set_status_notice("Jcode account management");
+        self.set_status_notice(crate::tui::i18n::jcode_account_management());
     }
 
     pub(super) fn start_jcode_account_logout(&mut self) {
-        self.set_status_notice("Jcode account: logging out");
+        self.set_status_notice(crate::tui::i18n::jcode_account_logging_out());
         let session_id = self.session.id.clone();
         let Ok(handle) = tokio::runtime::Handle::try_current() else {
             let result = crate::subscription_catalog::clear_account_credentials();
@@ -1343,7 +1343,7 @@ impl App {
                     "Gemini login is unavailable: {}",
                     e
                 )));
-                self.set_status_notice("Login: failed");
+                self.set_status_notice(crate::tui::i18n::login_failed());
                 return;
             }
         };
@@ -1462,7 +1462,7 @@ impl App {
             },
             qr_section
         )));
-        self.set_status_notice("Login: waiting...");
+        self.set_status_notice(crate::tui::i18n::login_waiting());
         self.begin_pending_login(PendingLogin::Gemini {
             verifier,
             expected_state: pending_state,
@@ -1537,7 +1537,7 @@ impl App {
                  Paste the API base below. Press Enter to keep the current value, or type /cancel to abort.",
                 resolved.display_name, resolved.setup_url, resolved.api_base
             )));
-            self.set_status_notice("Login: API base...");
+            self.set_status_notice(crate::tui::i18n::login_api_base());
             self.pending_login = Some(PendingLogin::OpenAiCompatibleApiBase { profile });
             return;
         }
@@ -1645,7 +1645,7 @@ impl App {
              Enter your Azure OpenAI endpoint, for example https://your-resource.openai.azure.com, or type /cancel to abort."
                 .to_string(),
         ));
-        self.set_status_notice("Login: Azure endpoint...");
+        self.set_status_notice(crate::tui::i18n::login_azure_endpoint());
         self.begin_pending_login(PendingLogin::AzureEndpoint);
     }
 
@@ -1660,12 +1660,12 @@ impl App {
              Paste your API key below, or type /cancel to abort."
                 .to_string(),
         ));
-        self.set_status_notice("Login: paste cursor key...");
+        self.set_status_notice(crate::tui::i18n::login_paste_cursor_key());
         self.begin_pending_login(PendingLogin::CursorApiKey);
     }
 
     fn start_copilot_login(&mut self) {
-        self.set_status_notice("Login: copilot device flow...");
+        self.set_status_notice(crate::tui::i18n::login_copilot_device_flow());
         self.begin_pending_login(PendingLogin::Copilot);
 
         tokio::spawn(async move {
@@ -1785,7 +1785,7 @@ impl App {
                     "Antigravity login is unavailable: {}",
                     e
                 )));
-                self.set_status_notice("Login: failed");
+                self.set_status_notice(crate::tui::i18n::login_failed());
                 return;
             }
         };
@@ -1893,7 +1893,7 @@ impl App {
             },
             qr_section
         )));
-        self.set_status_notice("Login: antigravity waiting...");
+        self.set_status_notice(crate::tui::i18n::login_antigravity_waiting());
         self.begin_pending_login(PendingLogin::Antigravity {
             verifier,
             expected_state,
@@ -2061,7 +2061,7 @@ impl App {
                 expected_state,
                 redirect_uri,
             } => {
-                self.set_status_notice("Login: exchanging...");
+                self.set_status_notice(crate::tui::i18n::login_exchanging());
                 let input_owned = input.clone();
                 tokio::spawn(async move {
                     match crate::auth::gemini::exchange_callback_input(
@@ -2102,7 +2102,7 @@ impl App {
                 expected_state,
                 redirect_uri,
             } => {
-                self.set_status_notice("Login: exchanging...");
+                self.set_status_notice(crate::tui::i18n::login_exchanging());
                 let input_owned = input.clone();
                 tokio::spawn(async move {
                     match Self::antigravity_token_exchange(
@@ -2455,7 +2455,7 @@ impl App {
                     "Azure endpoint accepted. Now enter the Azure deployment/model name, for example gpt-4.1-nano."
                         .to_string(),
                 ));
-                self.set_status_notice("Login: Azure model...");
+                self.set_status_notice(crate::tui::i18n::login_azure_model());
                 self.pending_login = Some(PendingLogin::AzureModel { endpoint });
             }
             PendingLogin::AzureModel { endpoint } => {
@@ -2474,7 +2474,7 @@ impl App {
                      Enter 1 or 2 [1]."
                         .to_string(),
                 ));
-                self.set_status_notice("Login: Azure auth method...");
+                self.set_status_notice(crate::tui::i18n::login_azure_auth_method());
                 self.pending_login = Some(PendingLogin::AzureAuthChoice { endpoint, model });
             }
             PendingLogin::AzureAuthChoice { endpoint, model } => {
@@ -2520,7 +2520,7 @@ impl App {
                     self.push_display_message(DisplayMessage::system(
                         "Paste your Azure OpenAI API key, or type /cancel to abort.".to_string(),
                     ));
-                    self.set_status_notice("Login: Azure API key...");
+                    self.set_status_notice(crate::tui::i18n::login_azure_api_key());
                     self.pending_login = Some(PendingLogin::AzureApiKey { endpoint, model });
                 }
             }
@@ -2604,7 +2604,7 @@ impl App {
                     }
                 };
 
-                self.set_status_notice("Login: importing approved sources...");
+                self.set_status_notice(crate::tui::i18n::login_importing_approved_sources());
                 tokio::spawn(async move {
                     match crate::external_auth::run_external_auth_auto_import_candidates(
                         &candidates,

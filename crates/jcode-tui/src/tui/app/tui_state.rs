@@ -2095,13 +2095,13 @@ impl App {
     pub(crate) fn pop_out_selected_swarm_agent(&mut self) {
         let members = self.inline_swarm_members();
         if members.is_empty() {
-            self.set_status_notice("No swarm agents to open");
+            self.set_status_notice(crate::tui::i18n::no_swarm_agents_to_open());
             return;
         }
         let order = crate::tui::info_widget::swarm_gallery::members_display_order(&members);
         let idx = self.swarm_panel_selected.min(order.len().saturating_sub(1));
         let Some(session_id) = order.get(idx).cloned() else {
-            self.set_status_notice("No swarm agent selected");
+            self.set_status_notice(crate::tui::i18n::no_swarm_agent_selected());
             return;
         };
         let label = members

@@ -326,7 +326,7 @@ async fn forward_pending_reasoning_effort(app: &mut App, remote: &mut RemoteConn
                 "Failed to request reasoning effort '{}': {}",
                 effort, error
             )));
-            app.set_status_notice("Effort switch failed");
+            app.set_status_notice(crate::tui::i18n::effort_switch_failed());
         }
     }
 }
@@ -379,7 +379,7 @@ pub(super) async fn handle_terminal_event(
                                 "Failed to request model switch: {}",
                                 error
                             )));
-                            app.set_status_notice("Model switch failed");
+                            app.set_status_notice(crate::tui::i18n::model_switch_failed());
                         }
                     }
                 } else if let Some(spec) = app.pending_model_switch.take() {
@@ -394,7 +394,7 @@ pub(super) async fn handle_terminal_event(
                                 "Failed to request model switch: {}",
                                 error
                             )));
-                            app.set_status_notice("Model switch failed");
+                            app.set_status_notice(crate::tui::i18n::model_switch_failed());
                         }
                     }
                 }
@@ -571,7 +571,7 @@ pub(super) async fn handle_bus_event(
                     "Failed to notify server about refreshed auth: {error}"
                 ));
                 app.finish_auth_catalog_refresh();
-                app.set_status_notice("Model setup will retry after reconnect");
+                app.set_status_notice(crate::tui::i18n::model_setup_will_retry_after_reconnect());
             }
             true
         }
@@ -786,7 +786,7 @@ pub(super) async fn handle_remote_event<B: Backend>(
                     "Remote protocol error. Stopped reconnecting to avoid replaying a large/corrupt session repeatedly. {}\n\nTry starting a fresh session, or resume after reducing/removing oversized tool output from the session history.",
                     detail
                 )));
-                app.set_status_notice("Remote protocol error");
+                app.set_status_notice(crate::tui::i18n::remote_protocol_error());
                 app.is_processing = false;
                 app.status = ProcessingStatus::Idle;
                 return Ok((RemoteEventOutcome::Quit, true));
@@ -830,7 +830,7 @@ pub(super) async fn handle_remote_event<B: Backend>(
                     "Failed to apply transcript: {}",
                     error
                 )));
-                app.set_status_notice("Transcript failed");
+                app.set_status_notice(crate::tui::i18n::transcript_failed());
                 needs_redraw = true;
             }
             process_remote_followups(app, remote).await;
@@ -1036,7 +1036,7 @@ async fn recover_stuck_remote_history(app: &mut App, remote: &mut RemoteConnecti
                  This usually clears on its own; if it persists, run /restart to reconnect."
                     .to_string(),
             ));
-            app.set_status_notice("Session history not loading - try /restart");
+            app.set_status_notice(crate::tui::i18n::session_history_not_loading_try_restart());
             // Clear last_attempt so we don't repeat the message every tick, but
             // keep attempts at max so we don't re-enter the retry path.
             app.remote_history_recovery_last_attempt = None;
@@ -1063,7 +1063,7 @@ async fn recover_stuck_remote_history(app: &mut App, remote: &mut RemoteConnecti
     ));
     match remote.request_history().await {
         Ok(_) => {
-            app.set_status_notice("Loading session… re-requesting history");
+            app.set_status_notice(crate::tui::i18n::loading_session_re_requesting_history());
         }
         Err(err) => {
             crate::logging::error(&format!(
@@ -1118,7 +1118,7 @@ async fn dispatch_pending_server_reload(app: &mut App, remote: &mut RemoteConnec
             app.push_display_message(DisplayMessage::system(
                 "ℹ Server keeps reporting a newer binary after repeated reloads; auto-reload paused to avoid a loop. Use `/reload` manually if needed.".to_string(),
             ));
-            app.set_status_notice("Server auto-reload paused (possible loop)");
+            app.set_status_notice(crate::tui::i18n::server_auto_reload_paused_possible_loop());
         } else {
             app.server_auto_reload_attempts += 1;
             app.append_reload_message("Reloading server with newer binary...");
@@ -1127,14 +1127,14 @@ async fn dispatch_pending_server_reload(app: &mut App, remote: &mut RemoteConnec
                     "Failed to auto-reload server: {}. Use `/reload` to retry.",
                     err
                 )));
-                app.set_status_notice("Server update available - auto reload failed");
+                app.set_status_notice(crate::tui::i18n::server_update_available_auto_reload_failed());
             }
         }
     } else {
         app.push_display_message(DisplayMessage::system(
             "ℹ Newer server binary detected. Auto-reload is disabled by `display.auto_server_reload = false`. Use `/reload` manually when you're ready.".to_string(),
         ));
-        app.set_status_notice("Server update available - manual /reload recommended");
+        app.set_status_notice(crate::tui::i18n::server_update_available_manual_reload_recommended());
     }
 }
 
@@ -1198,7 +1198,7 @@ pub(super) async fn process_remote_followups(app: &mut App, remote: &mut RemoteC
                 "Failed to resend after fallback switch: {}",
                 error
             )));
-            app.set_status_notice("Fallback resend failed");
+            app.set_status_notice(crate::tui::i18n::fallback_resend_failed());
         }
         return;
     }
@@ -1213,7 +1213,7 @@ pub(super) async fn process_remote_followups(app: &mut App, remote: &mut RemoteC
                 "Failed to submit prompt after model switch: {}",
                 error
             )));
-            app.set_status_notice("Queued prompt failed");
+            app.set_status_notice(crate::tui::i18n::queued_prompt_failed());
         }
         return;
     }
@@ -1234,7 +1234,7 @@ pub(super) async fn process_remote_followups(app: &mut App, remote: &mut RemoteC
                 "Failed to submit prompt after session load: {}",
                 error
             )));
-            app.set_status_notice("Prompt failed");
+            app.set_status_notice(crate::tui::i18n::prompt_failed());
         }
         return;
     }
@@ -1274,7 +1274,7 @@ pub(super) async fn process_remote_followups(app: &mut App, remote: &mut RemoteC
                     "Failed to submit startup prompt: {}",
                     error
                 )));
-                app.set_status_notice("Startup prompt failed");
+                app.set_status_notice(crate::tui::i18n::startup_prompt_failed());
             }
             return;
         } else {
@@ -1752,7 +1752,7 @@ fn queue_message_for_reconnect(app: &mut App) {
         if handle_disconnected_local_command(app, &trimmed) {
             return;
         }
-        app.set_status_notice("This command requires a live connection");
+        app.set_status_notice(crate::tui::i18n::this_command_requires_a_live_connection());
         return;
     }
 

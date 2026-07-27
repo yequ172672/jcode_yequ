@@ -252,7 +252,7 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
     lines.push(separator());
     lines.push(Line::from(""));
 
-    lines.push(Line::from(Span::styled("  Session", section_style)));
+    lines.push(Line::from(Span::styled(crate::tui::i18n::help_section_session(), section_style)));
     lines.push(Line::from(""));
     lines.push(help_entry("/clear", crate::tui::i18n::help_entry_clear()));
     lines.push(help_entry(
@@ -342,7 +342,7 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
     lines.push(separator());
     lines.push(Line::from(""));
 
-    lines.push(Line::from(Span::styled("  Memory & Swarm", section_style)));
+    lines.push(Line::from(Span::styled(crate::tui::i18n::help_section_memory_swarm(), section_style)));
     lines.push(Line::from(""));
     lines.push(help_entry("/memory [on|off]", crate::tui::i18n::help_entry_memory()));
     lines.push(help_entry(
@@ -359,9 +359,9 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
     lines.push(separator());
     lines.push(Line::from(""));
 
-    lines.push(Line::from(Span::styled("  Auth & Accounts", section_style)));
+    lines.push(Line::from(Span::styled(crate::tui::i18n::help_section_auth_accounts(), section_style)));
     lines.push(Line::from(""));
-    lines.push(help_entry("/auth", "Show authentication status"));
+    lines.push(help_entry("/auth", crate::tui::i18n::help_entry_auth()));
     lines.push(help_entry(
         "/login [provider]",
         crate::tui::i18n::help_entry_login(),
@@ -383,7 +383,7 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
     lines.push(separator());
     lines.push(Line::from(""));
 
-    lines.push(Line::from(Span::styled("  System", section_style)));
+    lines.push(Line::from(Span::styled(crate::tui::i18n::help_section_system(), section_style)));
     lines.push(Line::from(""));
     lines.push(help_entry("/reload", crate::tui::i18n::help_entry_reload()));
     lines.push(help_entry(
@@ -425,10 +425,10 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
     lines.push(separator());
     lines.push(Line::from(""));
 
-    lines.push(Line::from(Span::styled("  Navigation", section_style)));
+    lines.push(Line::from(Span::styled(crate::tui::i18n::help_section_navigation(), section_style)));
     lines.push(Line::from(""));
-    lines.push(key_entry("PageUp / PageDown", "Scroll history"));
-    lines.push(key_entry("Up / Down", "Scroll history (when input empty)"));
+    lines.push(key_entry("PageUp / PageDown", crate::tui::i18n::help_key_scroll_history()));
+    lines.push(key_entry("Up / Down", crate::tui::i18n::help_key_scroll_input()));
     lines.push(key_entry(
         "Ctrl+J / Ctrl+K",
         "Jump to next / previous user prompt (also Ctrl+] / Ctrl+[)",
@@ -441,7 +441,7 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
         "Cmd/Super+K / J",
         "Jump to previous / next user prompt (macOS, if forwarded)",
     ));
-    lines.push(key_entry("Ctrl+1..4", "Resize side panel to 25/50/75/100%"));
+    lines.push(key_entry("Ctrl+1..4", crate::tui::i18n::help_key_resize_panel_25()));
     lines.push(key_entry(
         "Ctrl+5..9",
         "Jump by recency (5 = 5th most recent)",
@@ -460,25 +460,25 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
         crate::tui::keybind::side_panel_toggle_key_label(),
         "Toggle side panel (or diagram pane if empty)",
     ));
-    lines.push(key_entry("Alt+T", "Toggle diagram position (side/top)"));
+    lines.push(key_entry("Alt+T", crate::tui::i18n::help_key_toggle_diagram()));
     lines.push(key_entry(
         "Alt+Shift+I",
         "Show/hide inline images (persists)",
     ));
-    lines.push(key_entry("Ctrl+H / Ctrl+L", "Focus chat / diagram / diffs"));
+    lines.push(key_entry("Ctrl+H / Ctrl+L", crate::tui::i18n::help_key_focus_chat()));
     lines.push(key_entry(
         "Ctrl+Left / Right",
         "Cycle diagrams (when diagram focused)",
     ));
-    lines.push(key_entry("h/j/k/l / arrows", "Pan diagram (when focused)"));
-    lines.push(key_entry("[ / ]", "Zoom diagram (when focused)"));
-    lines.push(key_entry("+ / -", "Resize diagram pane"));
+    lines.push(key_entry("h/j/k/l / arrows", crate::tui::i18n::help_key_pan_diagram()));
+    lines.push(key_entry("[ / ]", crate::tui::i18n::help_key_zoom_diagram()));
+    lines.push(key_entry("+ / -", crate::tui::i18n::help_key_resize_diagram()));
     lines.push(key_entry(
         "Alt+G / /diff",
         "Cycle diff mode (Off/Inline/Pinned/File)",
     ));
-    lines.push(key_entry("Shift+Tab", "Cycle favorited models"));
-    lines.push(key_entry("Ctrl+O", "Set default model (in /model picker)"));
+    lines.push(key_entry("Shift+Tab", crate::tui::i18n::help_key_cycle_favorites()));
+    lines.push(key_entry("Ctrl+O", crate::tui::i18n::help_key_set_default()));
     lines.push(key_entry(
         "Ctrl+N",
         "Toggle favorite model (in /model picker)",
@@ -488,43 +488,43 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
     lines.push(separator());
     lines.push(Line::from(""));
 
-    lines.push(Line::from(Span::styled("  Input & Editing", section_style)));
+    lines.push(Line::from(Span::styled(crate::tui::i18n::help_section_input_editing(), section_style)));
     lines.push(Line::from(""));
     lines.push(key_entry(
         "Ctrl+C / Ctrl+D",
         "Quit (press twice to confirm)",
     ));
-    lines.push(key_entry("Ctrl+X", "Cut entire input line to clipboard"));
+    lines.push(key_entry("Ctrl+X", crate::tui::i18n::help_key_cut_line()));
     lines.push(key_entry(
         "Ctrl+A",
         "Copy visible chat viewport plus nearby context",
     ));
-    lines.push(key_entry("Ctrl+U", "Clear input line"));
-    lines.push(key_entry("Ctrl+K", "Delete to end of input"));
+    lines.push(key_entry("Ctrl+U", crate::tui::i18n::help_key_clear_input()));
+    lines.push(key_entry("Ctrl+K", crate::tui::i18n::help_key_delete_to_end()));
     lines.push(key_entry(
         "Alt+Backspace / Alt+Delete",
-        "Delete previous word in input",
+        crate::tui::i18n::help_key_delete_word(),
     ));
     lines.push(key_entry(
         "Cmd/Super+Backspace / Delete",
-        "Delete previous word in input",
+        crate::tui::i18n::help_key_delete_word(),
     ));
     if cfg!(target_os = "macos") {
         // On macOS, Cmd+Left/Right default to effort cycling; Home/End and
         // Cmd+A/E still jump to the start/end of the input.
-        lines.push(key_entry("Home / End", "Move to start / end of input"));
+        lines.push(key_entry("Home / End", crate::tui::i18n::help_key_home_end()));
     } else {
         lines.push(key_entry(
             "Cmd/Super+Left / Right",
-            "Move to start / end of input",
+            crate::tui::i18n::help_key_home_end(),
         ));
     }
-    lines.push(key_entry("Cmd/Super+Z", "Undo input edit"));
-    lines.push(key_entry("Cmd/Super+X / V", "Cut input / paste clipboard"));
-    lines.push(key_entry("Ctrl+S", "Stash / pop input (save for later)"));
-    lines.push(key_entry("Ctrl+Backspace", "Delete previous word in input"));
-    lines.push(key_entry("Ctrl+B / Ctrl+F", "Move by word left / right"));
-    lines.push(key_entry("Ctrl+Left / Right", "Move by word left / right"));
+    lines.push(key_entry("Cmd/Super+Z", crate::tui::i18n::help_key_undo_edit()));
+    lines.push(key_entry("Cmd/Super+X / V", crate::tui::i18n::help_key_cut_paste()));
+    lines.push(key_entry("Ctrl+S", crate::tui::i18n::help_key_stash_pop()));
+    lines.push(key_entry("Ctrl+Backspace", crate::tui::i18n::help_key_delete_word()));
+    lines.push(key_entry("Ctrl+B / Ctrl+F", crate::tui::i18n::help_key_move_word_lr()));
+    lines.push(key_entry("Ctrl+Left / Right", crate::tui::i18n::help_key_move_word_lr()));
     lines.push(key_entry(
         "Shift+Enter / Alt+Enter",
         "Insert newline in input",
@@ -533,9 +533,9 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
         "Ctrl+Enter / Cmd+Enter",
         "Use opposite send mode while processing",
     ));
-    lines.push(key_entry("Ctrl+Up", "Retrieve pending message for editing"));
-    lines.push(key_entry("Ctrl+Tab / Ctrl+T", "Toggle queue mode"));
-    lines.push(key_entry("Ctrl+R", "Recover from missing tool outputs"));
+    lines.push(key_entry("Ctrl+Up", crate::tui::i18n::help_key_retrieve_pending()));
+    lines.push(key_entry("Ctrl+Tab / Ctrl+T", crate::tui::i18n::help_key_toggle_queue()));
+    lines.push(key_entry("Ctrl+R", crate::tui::i18n::help_key_recover_tools()));
     lines.push(key_entry(
         "Ctrl+V / Alt+V",
         "Paste clipboard (text or image)",
@@ -544,10 +544,10 @@ pub(super) fn draw_help_overlay(frame: &mut Frame, area: Rect, scroll: usize, ap
         "Alt+A",
         "Quick-copy visible chat viewport plus nearby context",
     ));
-    lines.push(key_entry("Alt+Y", "Toggle chat selection/copy mode"));
-    lines.push(key_entry("Alt+S", "Toggle typing scroll lock"));
-    lines.push(key_entry("Ctrl+P", "Toggle auto-poke for incomplete todos"));
-    lines.push(key_entry("Alt+X", "Show/dismiss todo list card in chat"));
+    lines.push(key_entry("Alt+Y", crate::tui::i18n::help_key_toggle_chat_select()));
+    lines.push(key_entry("Alt+S", crate::tui::i18n::help_key_toggle_scroll_lock()));
+    lines.push(key_entry("Ctrl+P", crate::tui::i18n::help_key_toggle_auto_poke()));
+    lines.push(key_entry("Alt+X", crate::tui::i18n::help_key_toggle_todo_card()));
     lines.push(key_entry(
         &crate::tui::keybind::effort_switch_keys_label(),
         "Cycle effort (reasoning + swarm)",

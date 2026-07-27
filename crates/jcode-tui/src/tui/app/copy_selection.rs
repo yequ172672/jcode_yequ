@@ -344,23 +344,23 @@ impl App {
         F: FnOnce(&str) -> bool,
     {
         if !self.select_chat_viewport_context() {
-            self.set_status_notice("Nothing visible to copy");
+            self.set_status_notice(crate::tui::i18n::nothing_visible_to_copy());
             self.exit_copy_selection_mode();
             return false;
         }
 
         let text = self.current_copy_selection_text().unwrap_or_default();
         if text.is_empty() {
-            self.set_status_notice("Nothing visible to copy");
+            self.set_status_notice(crate::tui::i18n::nothing_visible_to_copy());
             self.exit_copy_selection_mode();
             return false;
         }
 
         let success = copy_text(&text);
         if success {
-            self.set_status_notice("Copied viewport context");
+            self.set_status_notice(crate::tui::i18n::copied_viewport_context());
         } else {
-            self.set_status_notice("Failed to copy viewport context");
+            self.set_status_notice(crate::tui::i18n::failed_to_copy_viewport_context());
         }
         self.exit_copy_selection_mode();
         success
@@ -376,15 +376,15 @@ impl App {
     {
         let text = self.current_copy_selection_text().unwrap_or_default();
         if text.is_empty() {
-            self.set_status_notice("Selection is empty");
+            self.set_status_notice(crate::tui::i18n::selection_is_empty());
             return false;
         }
         let success = copy_text(&text);
         if success {
-            self.set_status_notice("Copied selection");
+            self.set_status_notice(crate::tui::i18n::copied_selection());
             self.exit_copy_selection_mode();
         } else {
-            self.set_status_notice("Failed to copy selection");
+            self.set_status_notice(crate::tui::i18n::failed_to_copy_selection());
         }
         success
     }
@@ -590,7 +590,7 @@ impl App {
                 // user's system clipboard. Keep the selection active and require
                 // an explicit Enter/Y/C (or Ctrl+C) before writing the clipboard.
                 self.enter_copy_selection_mode();
-                self.set_status_notice("Selection ready · Enter/Y/C to copy · Esc to cancel");
+                self.set_status_notice(crate::tui::i18n::selection_ready_enter_y_c_to());
                 Some(false)
             }
             MouseEventKind::ScrollUp => {

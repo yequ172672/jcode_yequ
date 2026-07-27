@@ -21,7 +21,7 @@ pub(super) fn handle_productivity_command(app: &mut App, trimmed: &str) -> bool 
     }
 
     if app.productivity_refreshing {
-        app.set_status_notice("Productivity report already generating…");
+        app.set_status_notice(crate::tui::i18n::productivity_report_already_generating());
         return true;
     }
     app.productivity_refreshing = true;
@@ -29,7 +29,7 @@ pub(super) fn handle_productivity_command(app: &mut App, trimmed: &str) -> bool 
     app.push_display_message(DisplayMessage::system(
         "📊 Generating your productivity report… scanning transcripts (first run may take a few seconds).".to_string(),
     ));
-    app.set_status_notice("Productivity → scanning");
+    app.set_status_notice(crate::tui::i18n::productivity_scanning());
 
     let session_id = app.session.id.clone();
     std::thread::spawn(move || {
@@ -88,7 +88,7 @@ impl App {
                 self.push_display_message(DisplayMessage::error(format!(
                     "Failed to generate productivity report: {err}"
                 )));
-                self.set_status_notice("Productivity report failed");
+                self.set_status_notice(crate::tui::i18n::productivity_report_failed());
             }
         }
     }

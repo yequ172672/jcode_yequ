@@ -589,7 +589,7 @@ pub(super) fn handle_debug_command(app: &mut App, trimmed: &str) -> bool {
             title: None,
             tool_data: None,
         });
-        app.set_status_notice("Visual debug: ON");
+        app.set_status_notice(crate::tui::i18n::visual_debug_on());
         return true;
     }
 
@@ -604,7 +604,7 @@ pub(super) fn handle_debug_command(app: &mut App, trimmed: &str) -> bool {
             title: None,
             tool_data: None,
         });
-        app.set_status_notice("Visual debug: OFF");
+        app.set_status_notice(crate::tui::i18n::visual_debug_off());
         return true;
     }
 

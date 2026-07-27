@@ -1504,9 +1504,9 @@ impl App {
             self.cursor_pos = cursor_pos.min(self.input.len());
             self.reset_tab_completion();
             self.sync_model_picker_preview_from_input();
-            self.set_status_notice("↶ Input restored");
+            self.set_status_notice(crate::tui::i18n::input_restored());
         } else {
-            self.set_status_notice("Nothing to undo");
+            self.set_status_notice(crate::tui::i18n::nothing_to_undo());
         }
     }
 

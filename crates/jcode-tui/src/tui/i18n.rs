@@ -607,7 +607,290 @@ pub fn onboarding_auto_resume(seconds_left: u64, cli_label: &str) -> String {
         Language::En => format!("Opens the resume menu automatically in {}s...", seconds_left),
     }
 }
-
-
-
-
+// -- Status notices --
+pub fn account_center_unavailable() -> &'static str { if_zh("", "Account center unavailable") }
+pub fn account_center_choose_add_replace_target() -> &'static str { if_zh("", "Account center: choose add/replace target") }
+pub fn account_center_choose_an_action() -> &'static str { if_zh("", "Account center: choose an action") }
+pub fn account_picker_unavailable() -> &'static str { if_zh("", "Account picker unavailable") }
+pub fn account_cancelled() -> &'static str { if_zh("", "Account: cancelled") }
+pub fn active_sessions_loaded() -> &'static str { if_zh("", "Active sessions loaded") }
+pub fn agent_model_save_failed() -> &'static str { if_zh("", "Agent model save failed") }
+pub fn already_in_this_session() -> &'static str { if_zh("", "Already in this session") }
+pub fn architecture_review_queued() -> &'static str { if_zh("", "Architecture review queued") }
+pub fn autojudge_launch_failed() -> &'static str { if_zh("", "Autojudge launch failed") }
+pub fn autojudge_queued() -> &'static str { if_zh("", "Autojudge queued") }
+pub fn autojudge_off() -> &'static str { if_zh("", "Autojudge: OFF") }
+pub fn autojudge_on() -> &'static str { if_zh("", "Autojudge: ON") }
+pub fn autoreview_launch_failed() -> &'static str { if_zh("", "Autoreview launch failed") }
+pub fn autoreview_queued() -> &'static str { if_zh("", "Autoreview queued") }
+pub fn autoreview_off() -> &'static str { if_zh("", "Autoreview: OFF") }
+pub fn autoreview_on() -> &'static str { if_zh("", "Autoreview: ON") }
+pub fn back_empty() -> &'static str { if_zh("", "Back: empty") }
+pub fn bookmark_removed() -> &'static str { if_zh("", "Bookmark removed") }
+pub fn cache_stats() -> &'static str { if_zh("", "Cache stats") }
+pub fn catch_up_sessions_loaded() -> &'static str { if_zh("", "Catch Up sessions loaded") }
+pub fn catch_up_none_waiting() -> &'static str { if_zh("", "Catch Up: none waiting") }
+pub fn changelog() -> &'static str { if_zh("", "Changelog") }
+pub fn choose_a_suggested_review_or_start() -> &'static str { if_zh("", "Choose a suggested review or start a new session (↑↓, Enter)") }
+pub fn claude_takeover_did_not_complete() -> &'static str { if_zh("", "Claude takeover did not complete") }
+pub fn clearing_session_name() -> &'static str { if_zh("", "Clearing session name...") }
+pub fn compacting_context() -> &'static str { if_zh("", "Compacting context") }
+pub fn compaction_failed() -> &'static str { if_zh("", "Compaction failed") }
+pub fn context_compacted() -> &'static str { if_zh("", "Context compacted") }
+pub fn continue_all_failed() -> &'static str { if_zh("", "Continue all failed") }
+pub fn continuing_interrupted_sessions() -> &'static str { if_zh("", "Continuing interrupted sessions...") }
+pub fn copied_selection() -> &'static str { if_zh("", "Copied selection") }
+pub fn copied_viewport_context() -> &'static str { if_zh("", "Copied viewport context") }
+pub fn debug_gmail_draft_fixture_ready() -> &'static str { if_zh("", "Debug Gmail draft fixture ready") }
+pub fn debug_expand_badge_fixture_ready() -> &'static str { if_zh("", "Debug expand badge fixture ready") }
+pub fn diagram_image_not_found_on_disk() -> &'static str { if_zh("", "Diagram image not found on disk") }
+pub fn diagram_not_cached() -> &'static str { if_zh("", "Diagram not cached") }
+pub fn dictation_already_running() -> &'static str { if_zh("", "Dictation already running") }
+pub fn dictation_failed() -> &'static str { if_zh("", "Dictation failed") }
+pub fn dictation_not_configured() -> &'static str { if_zh("", "Dictation not configured") }
+pub fn downloading_image() -> &'static str { if_zh("", "Downloading image...") }
+pub fn effort_switch_failed() -> &'static str { if_zh("", "Effort switch failed") }
+pub fn emergency_compaction() -> &'static str { if_zh("", "Emergency compaction") }
+pub fn failed_to_copy_input_line() -> &'static str { if_zh("", "Failed to copy input line") }
+pub fn failed_to_copy_selection() -> &'static str { if_zh("", "Failed to copy selection") }
+pub fn failed_to_copy_viewport_context() -> &'static str { if_zh("", "Failed to copy viewport context") }
+pub fn failed_to_download_image() -> &'static str { if_zh("", "Failed to download image") }
+pub fn fallback_resend_failed() -> &'static str { if_zh("", "Fallback resend failed") }
+pub fn fallback_switch_failed() -> &'static str { if_zh("", "Fallback switch failed") }
+pub fn feedback_recorded() -> &'static str { if_zh("", "Feedback recorded") }
+pub fn finish_current_work_before_catch_up() -> &'static str { if_zh("", "Finish current work before Catch Up") }
+pub fn finish_current_work_before_going_back() -> &'static str { if_zh("", "Finish current work before going back") }
+pub fn finish_current_work_before_moving_workspace() -> &'static str { if_zh("", "Finish current work before moving workspace focus") }
+pub fn fix_applied() -> &'static str { if_zh("", "Fix applied") }
+pub fn focus_chat() -> &'static str { if_zh("", "Focus: chat") }
+pub fn focus_diagram_hjkl_pan_zoom_resize() -> &'static str { if_zh("", "Focus: diagram (hjkl pan, [/] zoom, +/- resize)") }
+pub fn focus_side_pane_j_k_scroll() -> &'static str { if_zh("", "Focus: side pane (j/k scroll, Esc to return)") }
+pub fn fork_failed() -> &'static str { if_zh("", "Fork failed") }
+pub fn forked_session_created() -> &'static str { if_zh("", "Forked session created") }
+pub fn git_status() -> &'static str { if_zh("", "Git status") }
+pub fn git_status_loading() -> &'static str { if_zh("", "Git status loading...") }
+pub fn image_side_panel_off() -> &'static str { if_zh("", "Image side panel: OFF") }
+pub fn image_side_panel_on() -> &'static str { if_zh("", "Image side panel: ON") }
+pub fn initiatives() -> &'static str { if_zh("", "Initiatives") }
+pub fn input_cleared_ctrl_z_to_restore() -> &'static str { if_zh("", "Input cleared - Ctrl+Z to restore") }
+pub fn interrupting_for_improve_resume() -> &'static str { if_zh("", "Interrupting for /improve resume...") }
+pub fn interrupting_for_improve_stop() -> &'static str { if_zh("", "Interrupting for /improve stop...") }
+pub fn interrupting_for_plan() -> &'static str { if_zh("", "Interrupting for /plan...") }
+pub fn interrupting_for_refactor_resume() -> &'static str { if_zh("", "Interrupting for /refactor resume...") }
+pub fn interrupting_for_refactor_stop() -> &'static str { if_zh("", "Interrupting for /refactor stop...") }
+pub fn interrupting() -> &'static str { if_zh("", "Interrupting...") }
+pub fn interrupting_auto_poke_off() -> &'static str { if_zh("", "Interrupting... Auto-poke OFF") }
+pub fn interrupting_auto_poke_off_overnight_cancelled() -> &'static str { if_zh("", "Interrupting... Auto-poke OFF, overnight cancelled") }
+pub fn interrupting_overnight_cancelled() -> &'static str { if_zh("", "Interrupting... Overnight cancelled") }
+pub fn jcode_account_management() -> &'static str { if_zh("", "Jcode account management") }
+pub fn jcode_account_logging_out() -> &'static str { if_zh("", "Jcode account: logging out") }
+pub fn jcode_account_requesting_browser_approval() -> &'static str { if_zh("", "Jcode account: requesting browser approval") }
+pub fn judge_launch_failed() -> &'static str { if_zh("", "Judge launch failed") }
+pub fn judge_queued() -> &'static str { if_zh("", "Judge queued") }
+pub fn loading_catch_up_sessions() -> &'static str { if_zh("", "Loading Catch Up sessions...") }
+pub fn loading_session() -> &'static str { if_zh("", "Loading session...") }
+pub fn loading_session_re_requesting_history() -> &'static str { if_zh("", "Loading session… re-requesting history") }
+pub fn local_shell_unavailable_in_remote_mode() -> &'static str { if_zh("", "Local shell unavailable in remote mode") }
+pub fn login_api_base() -> &'static str { if_zh("", "Login: API base...") }
+pub fn login_azure_api_key() -> &'static str { if_zh("", "Login: Azure API key...") }
+pub fn login_azure_auth_method() -> &'static str { if_zh("", "Login: Azure auth method...") }
+pub fn login_azure_endpoint() -> &'static str { if_zh("", "Login: Azure endpoint...") }
+pub fn login_azure_model() -> &'static str { if_zh("", "Login: Azure model...") }
+pub fn login_antigravity_waiting() -> &'static str { if_zh("", "Login: antigravity waiting...") }
+pub fn login_auto_import_failed() -> &'static str { if_zh("", "Login: auto import failed") }
+pub fn login_choose_a_provider() -> &'static str { if_zh("", "Login: choose a provider") }
+pub fn login_choose_sources_to_import() -> &'static str { if_zh("", "Login: choose sources to import") }
+pub fn login_copilot_device_flow() -> &'static str { if_zh("", "Login: copilot device flow...") }
+pub fn login_exchanging() -> &'static str { if_zh("", "Login: exchanging...") }
+pub fn login_failed() -> &'static str { if_zh("", "Login: failed") }
+pub fn login_importing_approved_sources() -> &'static str { if_zh("", "Login: importing approved sources...") }
+pub fn login_importing_selected_logins() -> &'static str { if_zh("", "Login: importing selected logins...") }
+pub fn login_no_external_imports_found() -> &'static str { if_zh("", "Login: no external imports found") }
+pub fn login_opening_openai_sign_in_or() -> &'static str { if_zh("", "Login: opening OpenAI sign-in (or type /login for others)") }
+pub fn login_paste_cursor_key() -> &'static str { if_zh("", "Login: paste cursor key...") }
+pub fn login_waiting() -> &'static str { if_zh("", "Login: waiting...") }
+pub fn logout_failed() -> &'static str { if_zh("", "Logout failed") }
+pub fn logout_all_providers() -> &'static str { if_zh("", "Logout: all providers") }
+pub fn logout_choose_a_provider() -> &'static str { if_zh("", "Logout: choose a provider") }
+pub fn logout_completed_with_errors() -> &'static str { if_zh("", "Logout: completed with errors") }
+pub fn mcp_all_connections_failed() -> &'static str { if_zh("", "MCP: all connections failed") }
+pub fn memory_off() -> &'static str { if_zh("", "Memory: OFF") }
+pub fn memory_on() -> &'static str { if_zh("", "Memory: ON") }
+pub fn merge_agent_failed_to_start() -> &'static str { if_zh("", "Merge agent failed to start") }
+pub fn merge_agent_launched() -> &'static str { if_zh("", "Merge agent launched") }
+pub fn migration_aborted() -> &'static str { if_zh("", "Migration aborted") }
+pub fn model_favorites_unavailable_until_model_routes() -> &'static str { if_zh("", "Model favorites unavailable until model routes finish loading") }
+pub fn model_list_refresh_failed() -> &'static str { if_zh("", "Model list refresh failed") }
+pub fn model_list_update_failed() -> &'static str { if_zh("", "Model list update failed") }
+pub fn model_list_updated() -> &'static str { if_zh("", "Model list updated") }
+pub fn model_setup_will_retry_after_reconnect() -> &'static str { if_zh("", "Model setup will retry after reconnect") }
+pub fn model_switch_failed() -> &'static str { if_zh("", "Model switch failed") }
+pub fn model_switching_not_available() -> &'static str { if_zh("", "Model switching not available") }
+pub fn model_unavailable() -> &'static str { if_zh("", "Model unavailable") }
+pub fn moving_tool_to_background() -> &'static str { if_zh("", "Moving tool to background...") }
+pub fn next_prompt_new_session() -> &'static str { if_zh("", "Next prompt → new session") }
+pub fn next_prompt_new_session_canceled() -> &'static str { if_zh("", "Next-prompt new session canceled") }
+pub fn no_diagrams_to_open() -> &'static str { if_zh("", "No diagrams to open") }
+pub fn no_favorited_models_yet_use_ctrl() -> &'static str { if_zh("", "No favorited models yet. Use Ctrl+N to favorite one.") }
+pub fn no_image_in_clipboard() -> &'static str { if_zh("", "No image in clipboard") }
+pub fn no_keybinding_conflicts_detected() -> &'static str { if_zh("", "No keybinding conflicts detected") }
+pub fn no_logins_imported_press_enter_to() -> &'static str { if_zh("", "No logins imported. Press Enter to choose a provider.") }
+pub fn no_models_available() -> &'static str { if_zh("", "No models available") }
+pub fn no_sessions_to_resume() -> &'static str { if_zh("", "No sessions to resume") }
+pub fn no_supported_terminal_found_run_jcode() -> &'static str { if_zh("", "No supported terminal found; run `jcode` manually") }
+pub fn no_swarm_agent_selected() -> &'static str { if_zh("", "No swarm agent selected") }
+pub fn no_swarm_agents_to_open() -> &'static str { if_zh("", "No swarm agents to open") }
+pub fn no_terminal_available_for_merge_agent() -> &'static str { if_zh("", "No terminal available for merge agent") }
+pub fn no_text_or_image_in_clipboard() -> &'static str { if_zh("", "No text or image in clipboard") }
+pub fn no_workspace_session_in_that_direction() -> &'static str { if_zh("", "No workspace session in that direction") }
+pub fn nothing_to_undo() -> &'static str { if_zh("", "Nothing to undo") }
+pub fn nothing_visible_to_copy() -> &'static str { if_zh("", "Nothing visible to copy") }
+pub fn observe_off() -> &'static str { if_zh("", "Observe: OFF") }
+pub fn observe_on() -> &'static str { if_zh("", "Observe: ON") }
+pub fn onboarding_flow_already_active_can_t() -> &'static str { if_zh("", "Onboarding flow already active; can't start the simulator now") }
+pub fn onboarding_preview_unavailable_while_busy() -> &'static str { if_zh("", "Onboarding preview unavailable while busy") }
+pub fn onboarding_preview_off() -> &'static str { if_zh("", "Onboarding preview: off") }
+pub fn onboarding_preview_on() -> &'static str { if_zh("", "Onboarding preview: on") }
+pub fn onboarding_simulator_off() -> &'static str { if_zh("", "Onboarding simulator: off") }
+pub fn opened_swarm_prompt() -> &'static str { if_zh("", "Opened swarm prompt") }
+pub fn overnight_auto_poke_complete() -> &'static str { if_zh("", "Overnight auto-poke complete") }
+pub fn overnight_auto_poke_finished() -> &'static str { if_zh("", "Overnight auto-poke finished") }
+pub fn overnight_auto_poke_stopped() -> &'static str { if_zh("", "Overnight auto-poke stopped") }
+pub fn overnight_cancel_requested() -> &'static str { if_zh("", "Overnight cancel requested") }
+pub fn overnight_log() -> &'static str { if_zh("", "Overnight log") }
+pub fn overnight_poke_stopped_non_retryable_error() -> &'static str { if_zh("", "Overnight poke stopped: non-retryable error") }
+pub fn overnight_queued_in_current_remote_session() -> &'static str { if_zh("", "Overnight queued in current remote session") }
+pub fn overnight_review_opened() -> &'static str { if_zh("", "Overnight review opened") }
+pub fn overnight_started() -> &'static str { if_zh("", "Overnight started") }
+pub fn overnight_started_in_current_session() -> &'static str { if_zh("", "Overnight started in current session") }
+pub fn overnight_status() -> &'static str { if_zh("", "Overnight status") }
+pub fn overnight_stopped_errors() -> &'static str { if_zh("", "Overnight stopped: errors") }
+pub fn overnight_stopped_no_progress() -> &'static str { if_zh("", "Overnight stopped: no progress") }
+pub fn overnight_stopped_poke_budget() -> &'static str { if_zh("", "Overnight stopped: poke budget") }
+pub fn plan_proposal_received() -> &'static str { if_zh("", "Plan proposal received") }
+pub fn poke_queued_after_current_turn() -> &'static str { if_zh("", "Poke queued after current turn") }
+pub fn poke_stopped_non_retryable_error() -> &'static str { if_zh("", "Poke stopped: non-retryable error") }
+pub fn poke_stopped_provider_guardrail() -> &'static str { if_zh("", "Poke stopped: provider guardrail") }
+pub fn poke_off() -> &'static str { if_zh("", "Poke: OFF") }
+pub fn poke_on() -> &'static str { if_zh("", "Poke: ON") }
+pub fn premium_normal() -> &'static str { if_zh("", "Premium: normal") }
+pub fn preparing_transfer() -> &'static str { if_zh("", "Preparing transfer") }
+pub fn press_ctrl_c_again_to_quit() -> &'static str { if_zh("", "Press Ctrl+C again to quit") }
+pub fn productivity_report_already_generating() -> &'static str { if_zh("", "Productivity report already generating…") }
+pub fn productivity_report_failed() -> &'static str { if_zh("", "Productivity report failed") }
+pub fn productivity_scanning() -> &'static str { if_zh("", "Productivity → scanning") }
+pub fn prompt_failed() -> &'static str { if_zh("", "Prompt failed") }
+pub fn prompt_launch_failed() -> &'static str { if_zh("", "Prompt launch failed") }
+pub fn prompt_launched_in_new_session() -> &'static str { if_zh("", "Prompt launched in new session") }
+pub fn prompt_launching_in_new_session() -> &'static str { if_zh("", "Prompt launching in new session") }
+pub fn prompt_restored_to_input_after_error() -> &'static str { if_zh("", "Prompt restored to input after error") }
+pub fn prompt_session_created() -> &'static str { if_zh("", "Prompt session created") }
+pub fn provider_switch_failed() -> &'static str { if_zh("", "Provider switch failed") }
+pub fn queued_test() -> &'static str { if_zh("", "Queued /test") }
+pub fn queued_interleave_recovery_failed() -> &'static str { if_zh("", "Queued interleave recovery failed") }
+pub fn queued_prompt_failed() -> &'static str { if_zh("", "Queued prompt failed") }
+pub fn rate_limited_queued_retry() -> &'static str { if_zh("", "Rate limited; queued retry") }
+pub fn rate_limited_queued_system_retry() -> &'static str { if_zh("", "Rate limited; queued system retry") }
+pub fn reading_clipboard() -> &'static str { if_zh("", "Reading clipboard...") }
+pub fn reasoning_effort_not_available_for_this() -> &'static str { if_zh("", "Reasoning effort not available for this provider") }
+pub fn recovered_missing_tool_outputs() -> &'static str { if_zh("", "Recovered missing tool outputs") }
+pub fn recovered_pending_prompts_after_reload() -> &'static str { if_zh("", "Recovered pending prompts after reload") }
+pub fn recovered_queued_interleave_after_turn_finished() -> &'static str { if_zh("", "Recovered queued interleave after turn finished") }
+pub fn recovered_session() -> &'static str { if_zh("", "Recovered session") }
+pub fn recovery_needed() -> &'static str { if_zh("", "Recovery needed") }
+pub fn refreshing_model_catalog() -> &'static str { if_zh("", "Refreshing model catalog...") }
+pub fn refreshing_model_list() -> &'static str { if_zh("", "Refreshing model list...") }
+pub fn reload_complete_prompt_preserved() -> &'static str { if_zh("", "Reload complete - prompt preserved") }
+pub fn remote_protocol_error() -> &'static str { if_zh("", "Remote protocol error") }
+pub fn renaming_session() -> &'static str { if_zh("", "Renaming session...") }
+pub fn restored_queued_follow_up_after_reload() -> &'static str { if_zh("", "Restored queued follow-up after reload") }
+pub fn resuming_1_session() -> &'static str { if_zh("", "Resuming 1 session") }
+pub fn review_launch_failed() -> &'static str { if_zh("", "Review launch failed") }
+pub fn review_queued() -> &'static str { if_zh("", "Review queued") }
+pub fn running_test() -> &'static str { if_zh("", "Running /test") }
+pub fn running_subagent() -> &'static str { if_zh("", "Running subagent") }
+pub fn ssh_disconnected() -> &'static str { if_zh("", "SSH disconnected") }
+pub fn ssh_setup_1_4_enter_target() -> &'static str { if_zh("", "SSH setup 1/4: enter target") }
+pub fn ssh_setup_2_4_login_terminal() -> &'static str { if_zh("", "SSH setup 2/4: login terminal opened") }
+pub fn ssh_setup_cancelled() -> &'static str { if_zh("", "SSH setup cancelled") }
+pub fn selection_is_empty() -> &'static str { if_zh("", "Selection is empty") }
+pub fn selection_ready_enter_y_c_to() -> &'static str { if_zh("", "Selection ready · Enter/Y/C to copy · Esc to cancel") }
+pub fn self_dev() -> &'static str { if_zh("", "Self-dev") }
+pub fn self_dev_status() -> &'static str { if_zh("", "Self-dev status") }
+pub fn server_auto_reload_paused_possible_loop() -> &'static str { if_zh("", "Server auto-reload paused (possible loop)") }
+pub fn server_still_busy_follow_up_stays() -> &'static str { if_zh("", "Server still busy; follow-up stays queued") }
+pub fn server_update_available() -> &'static str { if_zh("", "Server update available") }
+pub fn server_update_available_auto_reload_failed() -> &'static str { if_zh("", "Server update available - auto reload failed") }
+pub fn server_update_available_manual_reload_recommended() -> &'static str { if_zh("", "Server update available - manual /reload recommended") }
+pub fn session_cleared() -> &'static str { if_zh("", "Session cleared") }
+pub fn session_history_not_loading_try_restart() -> &'static str { if_zh("", "Session history not loading - try /restart") }
+pub fn session_load_failed() -> &'static str { if_zh("", "Session load failed") }
+pub fn session_name_cleared() -> &'static str { if_zh("", "Session name cleared") }
+pub fn session_renamed() -> &'static str { if_zh("", "Session renamed") }
+pub fn session_saved() -> &'static str { if_zh("", "Session saved") }
+pub fn sessions_loaded() -> &'static str { if_zh("", "Sessions loaded") }
+pub fn shell_command_is_empty() -> &'static str { if_zh("", "Shell command is empty") }
+pub fn side_panel_off() -> &'static str { if_zh("", "Side panel: OFF") }
+pub fn split_view() -> &'static str { if_zh("", "Split view") }
+pub fn split_view_off() -> &'static str { if_zh("", "Split view: OFF") }
+pub fn split_view_on() -> &'static str { if_zh("", "Split view: ON") }
+pub fn starting_background_rebuild() -> &'static str { if_zh("", "Starting background rebuild...") }
+pub fn startup_prompt_failed() -> &'static str { if_zh("", "Startup prompt failed") }
+pub fn startup_prompt_queued() -> &'static str { if_zh("", "Startup prompt queued") }
+pub fn stopped_model_endpoint_mismatch() -> &'static str { if_zh("", "Stopped: model/endpoint mismatch") }
+pub fn stopped_repeated_auth_failures() -> &'static str { if_zh("", "Stopped: repeated auth failures") }
+pub fn subagent_model_inherit() -> &'static str { if_zh("", "Subagent model: inherit") }
+pub fn subscribe_login_jcode_to_start() -> &'static str { if_zh("", "Subscribe: /login jcode to start") }
+pub fn swarm_page_alt_n_chat_alt() -> &'static str { if_zh("", "Swarm page: alt+n chat · alt+↑/↓ select · alt+o open · esc") }
+pub fn swarm_view_closed() -> &'static str { if_zh("", "Swarm view closed") }
+pub fn swarm_off() -> &'static str { if_zh("", "Swarm: OFF") }
+pub fn swarm_on() -> &'static str { if_zh("", "Swarm: ON") }
+pub fn swarm_alt_n_full_page_alt() -> &'static str { if_zh("", "Swarm: alt+n full page · alt+↑/↓ select · alt+o open · esc") }
+pub fn this_command_requires_a_live_connection() -> &'static str { if_zh("", "This command requires a live connection") }
+pub fn todos_card() -> &'static str { if_zh("", "Todos card") }
+pub fn todos_card_dismissed() -> &'static str { if_zh("", "Todos card dismissed") }
+pub fn todos_panel_off() -> &'static str { if_zh("", "Todos panel: OFF") }
+pub fn todos_panel_on() -> &'static str { if_zh("", "Todos panel: ON") }
+pub fn transcript_appended() -> &'static str { if_zh("", "Transcript appended") }
+pub fn transcript_failed() -> &'static str { if_zh("", "Transcript failed") }
+pub fn transcript_inserted() -> &'static str { if_zh("", "Transcript inserted") }
+pub fn transcript_opened() -> &'static str { if_zh("", "Transcript opened") }
+pub fn transcript_path() -> &'static str { if_zh("", "Transcript path") }
+pub fn transcript_replaced_input() -> &'static str { if_zh("", "Transcript replaced input") }
+pub fn transcript_was_empty() -> &'static str { if_zh("", "Transcript was empty") }
+pub fn transfer_already_pending() -> &'static str { if_zh("", "Transfer already pending") }
+pub fn transfer_failed() -> &'static str { if_zh("", "Transfer failed") }
+pub fn transfer_launch_failed() -> &'static str { if_zh("", "Transfer launch failed") }
+pub fn transfer_launched() -> &'static str { if_zh("", "Transfer launched") }
+pub fn transfer_open_failed() -> &'static str { if_zh("", "Transfer open failed") }
+pub fn transfer_queue_failed() -> &'static str { if_zh("", "Transfer queue failed") }
+pub fn transfer_queued_after_current_turn() -> &'static str { if_zh("", "Transfer queued after current turn") }
+pub fn transfer_session_created() -> &'static str { if_zh("", "Transfer session created") }
+pub fn try_a_suggestion_or_type_anything() -> &'static str { if_zh("", "Try a suggestion, or type anything to start") }
+pub fn undoing_rewind() -> &'static str { if_zh("", "Undoing rewind...") }
+pub fn updating_model_list() -> &'static str { if_zh("", "Updating model list…") }
+pub fn updating_model_routes() -> &'static str { if_zh("", "Updating model routes…") }
+pub fn usage_no_connected_providers() -> &'static str { if_zh("", "Usage → no connected providers") }
+pub fn usage_refreshing() -> &'static str { if_zh("", "Usage → refreshing") }
+pub fn usage_showing_cached_data_refreshing() -> &'static str { if_zh("", "Usage → showing cached data, refreshing") }
+pub fn usage_updated() -> &'static str { if_zh("", "Usage → updated") }
+pub fn visual_debug_off() -> &'static str { if_zh("", "Visual debug: OFF") }
+pub fn visual_debug_on() -> &'static str { if_zh("", "Visual debug: ON") }
+pub fn waiting_for_reload_handoff() -> &'static str { if_zh("", "Waiting for reload handoff...") }
+pub fn workspace_add_queued() -> &'static str { if_zh("", "Workspace add queued") }
+pub fn workspace_mode_disabled() -> &'static str { if_zh("", "Workspace mode disabled") }
+pub fn workspace_mode_enabled() -> &'static str { if_zh("", "Workspace mode enabled") }
+pub fn you_re_all_set_type_anything() -> &'static str { if_zh("", "You're all set, type anything to start") }
+pub fn new_terminal_opened() -> &'static str { if_zh("", "↗ New terminal opened") }
+pub fn input_restored() -> &'static str { if_zh("", "↶ Input restored") }
+pub fn interactive_terminal_detected_command_will_timeout() -> &'static str { if_zh("", "⌨ Interactive terminal detected (command will timeout)") }
+pub fn interleave_sent() -> &'static str { if_zh("", "⏭ Interleave sent") }
+pub fn sending_now_interleave() -> &'static str { if_zh("", "⏭ Sending now (interleave)") }
+pub fn cut_input_line() -> &'static str { if_zh("", "✂ Cut input line") }
+pub fn dictation_running_press_again_to_stop() -> &'static str { if_zh("", "🎙 Dictation running - press again to stop") }
+pub fn stopping_dictation() -> &'static str { if_zh("", "🎙 Stopping dictation...") }
+pub fn input_restored_from_stash() -> &'static str { if_zh("", "📋 Input restored from stash") }
+pub fn input_stashed() -> &'static str { if_zh("", "📋 Input stashed") }
+pub fn swapped_input_with_stash() -> &'static str { if_zh("", "📋 Swapped input with stash") }
+pub fn bookmark_set_press_again_to_return() -> &'static str { if_zh("", "📌 Bookmark set - press again to return") }
+pub fn returned_to_bookmark() -> &'static str { if_zh("", "📌 Returned to bookmark") }

@@ -1228,7 +1228,7 @@ pub(in crate::tui::app) fn handle_server_event(
                     observed_at: Instant::now(),
                     current_tool_name: None,
                 });
-                app.set_status_notice("Server still busy; follow-up stays queued");
+                app.set_status_notice(crate::tui::i18n::server_still_busy_follow_up_stays());
                 crate::logging::info(
                     "Server rejected queued continuation because a turn is still running; re-queued it and re-adopted the running turn",
                 );
@@ -1248,9 +1248,9 @@ pub(in crate::tui::app) fn handle_server_event(
                         app.rate_limit_notice_with_nudge(reset_duration.as_secs());
                     app.push_display_message(DisplayMessage::system(rate_limit_line));
                     if is_system {
-                        app.set_status_notice("Rate limited; queued system retry");
+                        app.set_status_notice(crate::tui::i18n::rate_limited_queued_system_retry());
                     } else {
-                        app.set_status_notice("Rate limited; queued retry");
+                        app.set_status_notice(crate::tui::i18n::rate_limited_queued_retry());
                     }
                     app.is_processing = false;
                     app.status = ProcessingStatus::Idle;
@@ -1345,7 +1345,7 @@ pub(in crate::tui::app) fn handle_server_event(
                 app.push_display_message(DisplayMessage::system(
                     "🛑 Not retrying: the model is not valid for the configured endpoint (e.g. an Ark coding-plan endpoint rejecting a model without the coding plan feature, or a model-not-found). Check the model name and base URL (the coding endpoint `/api/coding/v3` only accepts coding-plan models; use `/api/v3` otherwise), then send again.".to_string(),
                 ));
-                app.set_status_notice("Stopped: model/endpoint mismatch");
+                app.set_status_notice(crate::tui::i18n::stopped_model_endpoint_mismatch());
                 app.restore_failed_input_to_box();
                 // Switching models is exactly the right fix for a
                 // model/endpoint mismatch: offer the next best route.
@@ -1437,13 +1437,13 @@ pub(in crate::tui::app) fn handle_server_event(
                         "Renamed session to {}.",
                         display_title
                     )));
-                    app.set_status_notice("Session renamed");
+                    app.set_status_notice(crate::tui::i18n::session_renamed());
                 } else {
                     app.push_display_message(DisplayMessage::system(format!(
                         "Cleared custom name. Session title is now {}.",
                         display_title
                     )));
-                    app.set_status_notice("Session name cleared");
+                    app.set_status_notice(crate::tui::i18n::session_name_cleared());
                 }
                 true
             } else {
@@ -1762,7 +1762,7 @@ pub(in crate::tui::app) fn handle_server_event(
 
             if server_has_update == Some(true) && !app.pending_server_reload {
                 app.pending_server_reload = true;
-                app.set_status_notice("Server update available");
+                app.set_status_notice(crate::tui::i18n::server_update_available());
             }
             app.remote_server_short_name = server_name;
             if let Some(icon) = server_icon {
@@ -1921,7 +1921,7 @@ pub(in crate::tui::app) fn handle_server_event(
                     app.input.clear();
                     app.cursor_pos = 0;
                     app.pending_images.clear();
-                    app.set_status_notice("Reload complete - prompt preserved");
+                    app.set_status_notice(crate::tui::i18n::reload_complete_prompt_preserved());
                 }
                 app.note_runtime_memory_event_force("history_loaded", "remote_history_applied");
                 crate::process_memory::release_retained_heap("client_history_loaded");
@@ -2195,7 +2195,7 @@ pub(in crate::tui::app) fn handle_server_event(
             );
             app.push_display_message(DisplayMessage::system(message.clone()));
             persist_replay_display_message(app, "system", None, &message);
-            app.set_status_notice("Plan proposal received");
+            app.set_status_notice(crate::tui::i18n::plan_proposal_received());
             false
         }
         ServerEvent::McpStatus { servers } => {
@@ -2237,7 +2237,7 @@ pub(in crate::tui::app) fn handle_server_event(
                 app.push_display_message(DisplayMessage::error(
                     crate::tui::app::model_context::model_switch_failure_message(&err, true),
                 ));
-                app.set_status_notice("Model switch failed");
+                app.set_status_notice(crate::tui::i18n::model_switch_failed());
             } else {
                 app.update_context_limit_for_model(&model);
                 app.remote_provider_model = Some(model.clone());
@@ -2795,10 +2795,10 @@ pub(in crate::tui::app) fn handle_server_event(
         } => {
             if success {
                 app.push_display_message(DisplayMessage::system(message));
-                app.set_status_notice("Compacting context");
+                app.set_status_notice(crate::tui::i18n::compacting_context());
             } else {
                 app.push_display_message(DisplayMessage::system(message));
-                app.set_status_notice("Compaction failed");
+                app.set_status_notice(crate::tui::i18n::compaction_failed());
             }
             false
         }
@@ -2807,16 +2807,16 @@ pub(in crate::tui::app) fn handle_server_event(
         } => {
             app.push_display_message(DisplayMessage::system(message));
             if resumed == 0 {
-                app.set_status_notice("No sessions to resume");
+                app.set_status_notice(crate::tui::i18n::no_sessions_to_resume());
             } else if resumed == 1 {
-                app.set_status_notice("Resuming 1 session");
+                app.set_status_notice(crate::tui::i18n::resuming_1_session());
             } else {
                 app.set_status_notice(format!("Resuming {} sessions", resumed));
             }
             false
         }
         ServerEvent::StdinRequest { .. } => {
-            app.set_status_notice("⌨ Interactive terminal detected (command will timeout)");
+            app.set_status_notice(crate::tui::i18n::interactive_terminal_detected_command_will_timeout());
             false
         }
         _ => false,

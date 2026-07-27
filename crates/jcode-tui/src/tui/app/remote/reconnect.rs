@@ -217,7 +217,7 @@ async fn wait_for_reload_handoff_before_reconnect(
 
     state.disconnect_start.get_or_insert_with(Instant::now);
     app.set_remote_startup_phase(super::super::RemoteStartupPhase::WaitingForReload);
-    app.set_status_notice("Waiting for reload handoff...");
+    app.set_status_notice(crate::tui::i18n::waiting_for_reload_handoff());
     let detail = state
         .last_disconnect_reason
         .as_deref()

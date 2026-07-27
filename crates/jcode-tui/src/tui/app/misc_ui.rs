@@ -125,7 +125,7 @@ impl App {
         self.inline_view_state = None;
         self.input.clear();
         self.cursor_pos = 0;
-        self.set_status_notice("Usage → refreshing");
+        self.set_status_notice(crate::tui::i18n::usage_refreshing());
     }
 
     pub(super) fn request_usage_report(&mut self) {

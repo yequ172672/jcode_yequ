@@ -54,7 +54,7 @@ impl App {
                     repaired
                 );
                 self.push_display_message(DisplayMessage::system(message));
-                self.set_status_notice("Recovered missing tool outputs");
+                self.set_status_notice(crate::tui::i18n::recovered_missing_tool_outputs());
             }
             if let Some(summary) = self.summarize_tool_results_missing() {
                 let message = format!(
@@ -62,7 +62,7 @@ impl App {
                     summary
                 );
                 self.push_display_message(DisplayMessage::error(message));
-                self.set_status_notice("Recovery needed");
+                self.set_status_notice(crate::tui::i18n::recovery_needed());
                 return Ok(());
             }
 

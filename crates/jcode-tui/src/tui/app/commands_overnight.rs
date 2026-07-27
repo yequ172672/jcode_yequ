@@ -52,9 +52,9 @@ pub(super) fn handle_overnight_command(app: &mut App, trimmed: &str) -> bool {
                             app.provider = visible_provider;
                         }
                         start_visible_overnight_turn(app, prompt);
-                        app.set_status_notice("Overnight started in current session");
+                        app.set_status_notice(crate::tui::i18n::overnight_started_in_current_session());
                     } else {
-                        app.set_status_notice("Overnight started");
+                        app.set_status_notice(crate::tui::i18n::overnight_started());
                     }
                 }
                 Err(error) => app.push_display_message(DisplayMessage::error(format!(
@@ -73,7 +73,7 @@ fn start_visible_overnight_turn(app: &mut App, content: String) {
     if app.is_remote {
         app.commit_pending_streaming_assistant_message();
         app.queued_messages.push(content);
-        app.set_status_notice("Overnight queued in current remote session");
+        app.set_status_notice(crate::tui::i18n::overnight_queued_in_current_remote_session());
         return;
     }
 
@@ -158,7 +158,7 @@ fn show_overnight_status(app: &mut App) {
                     crate::overnight::format_status_markdown(&manifest),
                 ));
             }
-            app.set_status_notice("Overnight status");
+            app.set_status_notice(crate::tui::i18n::overnight_status());
         }
         Ok(None) => app.push_display_message(DisplayMessage::system(
             "No overnight runs found.".to_string(),
@@ -176,7 +176,7 @@ fn show_overnight_log(app: &mut App) {
             app.push_display_message(DisplayMessage::system(
                 crate::overnight::format_log_markdown(&manifest, 30),
             ));
-            app.set_status_notice("Overnight log");
+            app.set_status_notice(crate::tui::i18n::overnight_log());
         }
         Ok(None) => app.push_display_message(DisplayMessage::system(
             "No overnight runs found.".to_string(),
@@ -204,7 +204,7 @@ fn open_overnight_review(app: &mut App) {
                         "Opened overnight review page: {}",
                         manifest.review_path.display()
                     )));
-                    app.set_status_notice("Overnight review opened");
+                    app.set_status_notice(crate::tui::i18n::overnight_review_opened());
                 }
                 Err(error) => app.push_display_message(DisplayMessage::error(format!(
                     "Failed to open overnight review page {}: {}",
@@ -233,7 +233,7 @@ fn cancel_overnight(app: &mut App) {
                     manifest.run_id,
                 )));
             }
-            app.set_status_notice("Overnight cancel requested");
+            app.set_status_notice(crate::tui::i18n::overnight_cancel_requested());
         }
         Err(error) => app.push_display_message(DisplayMessage::error(format!(
             "Failed to cancel overnight run: {}",
@@ -306,7 +306,7 @@ impl App {
         self.push_display_message(DisplayMessage::system(
             "🛑 Overnight auto-poke stopped because the last request failed with a non-retryable error. Fix the request/session, then run /overnight status and continue manually if appropriate.".to_string(),
         ));
-        self.set_status_notice("Overnight poke stopped: non-retryable error");
+        self.set_status_notice(crate::tui::i18n::overnight_poke_stopped_non_retryable_error());
         true
     }
 
@@ -336,14 +336,14 @@ impl App {
                 manifest.run_id,
                 overnight_status_label(&manifest.status)
             )));
-            self.set_status_notice("Overnight auto-poke finished");
+            self.set_status_notice(crate::tui::i18n::overnight_auto_poke_finished());
             return false;
         }
         if matches!(manifest.status, OvernightRunStatus::CancelRequested) {
             self.push_display_message(DisplayMessage::system(
                 "🛑 Overnight auto-poke stopped: cancellation requested.".to_string(),
             ));
-            self.set_status_notice("Overnight auto-poke stopped");
+            self.set_status_notice(crate::tui::i18n::overnight_auto_poke_stopped());
             return false;
         }
 
@@ -362,14 +362,14 @@ impl App {
                 state.stalled_turns,
                 manifest.review_path.display()
             )));
-            self.set_status_notice("Overnight stopped: no progress");
+            self.set_status_notice(crate::tui::i18n::overnight_stopped_no_progress());
             return false;
         }
         if state.error_turns >= OVERNIGHT_ERROR_LIMIT {
             self.push_display_message(DisplayMessage::system(
                 "🛑 Overnight auto-poke stopped after repeated turn errors.".to_string(),
             ));
-            self.set_status_notice("Overnight stopped: errors");
+            self.set_status_notice(crate::tui::i18n::overnight_stopped_errors());
             return false;
         }
         if state.total_pokes_sent >= overnight_poke_budget(&manifest) {
@@ -377,7 +377,7 @@ impl App {
                 "🛑 Overnight auto-poke stopped after reaching its safety budget of {} follow-up turns.",
                 state.total_pokes_sent
             )));
-            self.set_status_notice("Overnight stopped: poke budget");
+            self.set_status_notice(crate::tui::i18n::overnight_stopped_poke_budget());
             return false;
         }
 
@@ -387,7 +387,7 @@ impl App {
                 "✅ Overnight auto-poke finished after final wrap request. Review {}.",
                 manifest.review_path.display()
             )));
-            self.set_status_notice("Overnight auto-poke complete");
+            self.set_status_notice(crate::tui::i18n::overnight_auto_poke_complete());
             return false;
         }
 

@@ -386,9 +386,9 @@ impl App {
         self.diagram_focus = focus;
         self.diff_pane_focus = false;
         if focus {
-            self.set_status_notice("Focus: diagram (hjkl pan, [/] zoom, +/- resize)");
+            self.set_status_notice(crate::tui::i18n::focus_diagram_hjkl_pan_zoom_resize());
         } else {
-            self.set_status_notice("Focus: chat");
+            self.set_status_notice(crate::tui::i18n::focus_chat());
         }
     }
 
@@ -414,10 +414,10 @@ impl App {
                     "Focus: side pane (j/k scroll, h/l pan diagrams, Esc to return)",
                 );
             } else {
-                self.set_status_notice("Focus: side pane (j/k scroll, Esc to return)");
+                self.set_status_notice(crate::tui::i18n::focus_side_pane_j_k_scroll());
             }
         } else {
-            self.set_status_notice("Focus: chat");
+            self.set_status_notice(crate::tui::i18n::focus_chat());
         }
     }
 
@@ -994,7 +994,7 @@ impl App {
             if self.side_panel.pages.is_empty() {
                 if self.side_pane_has_visual_images_ignoring_user_hidden() {
                     self.sync_diagram_fit_context();
-                    self.set_status_notice("Image side panel: ON");
+                    self.set_status_notice(crate::tui::i18n::image_side_panel_on());
                 } else {
                     self.toggle_diagram_pane();
                 }
@@ -1008,7 +1008,7 @@ impl App {
             self.pinned_images_auto_hide_deadline = None;
             self.set_diff_pane_focus(false);
             self.sync_diagram_fit_context();
-            self.set_status_notice("Image side panel: OFF");
+            self.set_status_notice(crate::tui::i18n::image_side_panel_off());
             return;
         }
 
@@ -1026,7 +1026,7 @@ impl App {
                 self.set_diff_pane_focus(false);
             }
             self.sync_diagram_fit_context();
-            self.set_status_notice("Side panel: OFF");
+            self.set_status_notice(crate::tui::i18n::side_panel_off());
             return;
         }
 
@@ -1103,7 +1103,7 @@ impl App {
         let diagrams = super::super::mermaid::get_active_diagrams();
         let total = diagrams.len();
         if total == 0 {
-            self.set_status_notice("No diagrams to open");
+            self.set_status_notice(crate::tui::i18n::no_diagrams_to_open());
             return;
         }
         let index = self.diagram_index.min(total - 1);
@@ -1119,10 +1119,10 @@ impl App {
                     Err(e) => self.set_status_notice(format!("Failed to open: {}", e)),
                 }
             } else {
-                self.set_status_notice("Diagram image not found on disk");
+                self.set_status_notice(crate::tui::i18n::diagram_image_not_found_on_disk());
             }
         } else {
-            self.set_status_notice("Diagram not cached");
+            self.set_status_notice(crate::tui::i18n::diagram_not_cached());
         }
     }
 

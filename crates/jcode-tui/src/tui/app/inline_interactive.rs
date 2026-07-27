@@ -1074,7 +1074,7 @@ impl App {
                 false,
             );
             if self.inline_interactive_state.is_some() {
-                self.set_status_notice("Updating model routes…");
+                self.set_status_notice(crate::tui::i18n::updating_model_routes());
             } else {
                 self.open_loading_model_picker(&current_model);
             }
@@ -1121,7 +1121,7 @@ impl App {
                     false,
                 );
                 if self.inline_interactive_state.is_some() {
-                    self.set_status_notice("Updating model routes…");
+                    self.set_status_notice(crate::tui::i18n::updating_model_routes());
                 } else {
                     self.open_loading_model_picker(&current_model);
                 }
@@ -1197,7 +1197,7 @@ impl App {
             filter: String::new(),
             preview: false,
         });
-        self.set_status_notice("Updating model list…");
+        self.set_status_notice(crate::tui::i18n::updating_model_list());
     }
 
     fn start_model_picker_route_load(
@@ -1253,7 +1253,7 @@ impl App {
             Err(std::sync::mpsc::TryRecvError::Empty) => return false,
             Err(std::sync::mpsc::TryRecvError::Disconnected) => {
                 self.pending_model_picker_load = None;
-                self.set_status_notice("Model list update failed");
+                self.set_status_notice(crate::tui::i18n::model_list_update_failed());
                 return true;
             }
         };
@@ -1317,7 +1317,7 @@ impl App {
                     true,
                 );
                 if self.inline_interactive_state.is_some() {
-                    self.set_status_notice("Model list updated");
+                    self.set_status_notice(crate::tui::i18n::model_list_updated());
                 }
                 true
             }
@@ -1398,7 +1398,7 @@ impl App {
             self.push_display_message(DisplayMessage::system(
                 crate::tui::app::model_context::no_models_available_message(self.is_remote),
             ));
-            self.set_status_notice("No models available");
+            self.set_status_notice(crate::tui::i18n::no_models_available());
             return routes;
         }
 
@@ -2379,7 +2379,7 @@ impl App {
                 picker.set_current_dir(self.session.working_dir.clone());
                 picker.set_current_session_id(Some(super::commands::active_session_id(self)));
                 self.session_picker_overlay = Some(RefCell::new(picker));
-                self.set_status_notice("Sessions loaded");
+                self.set_status_notice(crate::tui::i18n::sessions_loaded());
                 true
             }
             SessionPickerMode::CatchUp => {
@@ -2387,7 +2387,7 @@ impl App {
                 picker.activate_catchup_filter();
                 picker.set_current_dir(self.session.working_dir.clone());
                 self.session_picker_overlay = Some(RefCell::new(picker));
-                self.set_status_notice("Catch Up sessions loaded");
+                self.set_status_notice(crate::tui::i18n::catch_up_sessions_loaded());
                 true
             }
             SessionPickerMode::ActiveSessions => {
@@ -2396,7 +2396,7 @@ impl App {
                 picker.set_current_session_id(Some(super::commands::active_session_id(self)));
                 picker.activate_active_filter();
                 self.session_picker_overlay = Some(RefCell::new(picker));
-                self.set_status_notice("Active sessions loaded");
+                self.set_status_notice(crate::tui::i18n::active_sessions_loaded());
                 true
             }
             // Onboarding constructs its action-only picker synchronously, so it
@@ -2437,7 +2437,7 @@ impl App {
                         "Failed to load sessions: {}",
                         e
                     )));
-                    self.set_status_notice("Session load failed");
+                    self.set_status_notice(crate::tui::i18n::session_load_failed());
                     return true;
                 }
                 false
@@ -2450,7 +2450,7 @@ impl App {
                     self.push_display_message(DisplayMessage::error(
                         "Session loading stopped before returning a result.".to_string(),
                     ));
-                    self.set_status_notice("Session load failed");
+                    self.set_status_notice(crate::tui::i18n::session_load_failed());
                     return true;
                 }
                 false
@@ -2464,7 +2464,7 @@ impl App {
             self.push_display_message(DisplayMessage::system(
                 "No sessions currently need catch up.".to_string(),
             ));
-            self.set_status_notice("Catch Up: none waiting");
+            self.set_status_notice(crate::tui::i18n::catch_up_none_waiting());
             return;
         }
 
@@ -2486,7 +2486,7 @@ impl App {
         picker.activate_catchup_filter();
         self.session_picker_overlay = Some(RefCell::new(picker));
         self.session_picker_mode = SessionPickerMode::CatchUp;
-        self.set_status_notice("Loading Catch Up sessions...");
+        self.set_status_notice(crate::tui::i18n::loading_catch_up_sessions());
         self.start_session_picker_load();
     }
 
@@ -2708,7 +2708,7 @@ impl App {
         if session_id == super::commands::active_session_id(self) {
             self.session_picker_overlay = None;
             self.session_picker_mode = SessionPickerMode::Resume;
-            self.set_status_notice("Already in this session");
+            self.set_status_notice(crate::tui::i18n::already_in_this_session());
             return;
         }
 
@@ -2741,7 +2741,7 @@ impl App {
                 self.push_display_message(DisplayMessage::error(format!(
                     "Claude takeover failed: {err}"
                 )));
-                self.set_status_notice("Claude takeover did not complete");
+                self.set_status_notice(crate::tui::i18n::claude_takeover_did_not_complete());
                 return false;
             }
         };
@@ -3016,7 +3016,7 @@ impl App {
         if let Some(entry_name) = selected_name {
             self.set_status_notice(format!("Favorite → {}", entry_name));
         } else {
-            self.set_status_notice("No favorited models yet. Use Ctrl+N to favorite one.");
+            self.set_status_notice(crate::tui::i18n::no_favorited_models_yet_use_ctrl());
         }
     }
 
@@ -3038,7 +3038,7 @@ impl App {
             .map(picker_is_runtime_model_picker)
             .unwrap_or(false)
         {
-            self.set_status_notice("Model favorites unavailable until model routes finish loading");
+            self.set_status_notice(crate::tui::i18n::model_favorites_unavailable_until_model_routes());
             return;
         }
         self.cycle_selected_model_favorite();
@@ -3375,7 +3375,7 @@ impl App {
                                     agent_model_target_label(target),
                                     error
                                 )));
-                                self.set_status_notice("Agent model save failed");
+                                self.set_status_notice(crate::tui::i18n::agent_model_save_failed());
                             }
                         }
                     }
@@ -3389,7 +3389,7 @@ impl App {
                                     self.is_remote,
                                 ),
                             ));
-                            self.set_status_notice("Model unavailable");
+                            self.set_status_notice(crate::tui::i18n::model_unavailable());
                             return Ok(());
                         }
 
@@ -3529,7 +3529,7 @@ impl App {
                                             self.is_remote,
                                         ),
                                     ));
-                                    self.set_status_notice("Model switch failed");
+                                    self.set_status_notice(crate::tui::i18n::model_switch_failed());
                                     return Ok(());
                                 }
                             }

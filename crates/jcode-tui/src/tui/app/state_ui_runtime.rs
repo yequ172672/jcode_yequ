@@ -444,16 +444,16 @@ impl App {
             let current_input = std::mem::replace(&mut self.input, stashed);
             let current_cursor = std::mem::replace(&mut self.cursor_pos, stashed_cursor);
             if current_input.is_empty() {
-                self.set_status_notice("📋 Input restored from stash");
+                self.set_status_notice(crate::tui::i18n::input_restored_from_stash());
             } else {
                 self.stashed_input = Some((current_input, current_cursor));
-                self.set_status_notice("📋 Swapped input with stash");
+                self.set_status_notice(crate::tui::i18n::swapped_input_with_stash());
             }
         } else if !self.input.is_empty() {
             let input = std::mem::take(&mut self.input);
             let cursor = std::mem::replace(&mut self.cursor_pos, 0);
             self.stashed_input = Some((input, cursor));
-            self.set_status_notice("📋 Input stashed");
+            self.set_status_notice(crate::tui::i18n::input_stashed());
         }
     }
 }

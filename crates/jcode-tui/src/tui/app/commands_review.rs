@@ -328,13 +328,13 @@ pub(super) fn handle_observe_command(app: &mut App, trimmed: &str) -> bool {
             let enabled = !app.observe_mode_enabled();
             app.set_observe_mode_enabled(enabled, true);
             if enabled {
-                app.set_status_notice("Observe: ON");
+                app.set_status_notice(crate::tui::i18n::observe_on());
                 app.push_display_message(DisplayMessage::system(
                     "Observe mode enabled - the side panel now tracks the latest useful tool call/result added to context."
                         .to_string(),
                 ));
             } else {
-                app.set_status_notice("Observe: OFF");
+                app.set_status_notice(crate::tui::i18n::observe_off());
                 app.push_display_message(DisplayMessage::system(
                     crate::tui::i18n::observe_mode_disabled().to_string(),
                 ));
@@ -342,7 +342,7 @@ pub(super) fn handle_observe_command(app: &mut App, trimmed: &str) -> bool {
         }
         "on" => {
             app.set_observe_mode_enabled(true, true);
-            app.set_status_notice("Observe: ON");
+            app.set_status_notice(crate::tui::i18n::observe_on());
             app.push_display_message(DisplayMessage::system(
                 "Observe mode enabled - the side panel now tracks the latest useful tool call/result added to context."
                     .to_string(),
@@ -350,7 +350,7 @@ pub(super) fn handle_observe_command(app: &mut App, trimmed: &str) -> bool {
         }
         "off" => {
             app.set_observe_mode_enabled(false, false);
-            app.set_status_notice("Observe: OFF");
+            app.set_status_notice(crate::tui::i18n::observe_off());
             app.push_display_message(DisplayMessage::system(crate::tui::i18n::observe_mode_disabled().to_string()));
         }
         "status" => {
@@ -720,7 +720,7 @@ pub(super) fn launch_forked_session_local(
                 "↗ Next prompt launched in {}.",
                 session_name
             )));
-            app.set_status_notice("Prompt launched in new session");
+            app.set_status_notice(crate::tui::i18n::prompt_launched_in_new_session());
         }
         (true, false) => {
             app.push_display_message(DisplayMessage::system(format!(
@@ -734,14 +734,14 @@ pub(super) fn launch_forked_session_local(
                 "↗ New session {} created for the next prompt.\n\nNo terminal was opened automatically. Resume manually:\n\n  jcode --resume {}",
                 session_name, session_id
             )));
-            app.set_status_notice("Prompt session created");
+            app.set_status_notice(crate::tui::i18n::prompt_session_created());
         }
         (false, false) => {
             app.push_display_message(DisplayMessage::system(format!(
                 "✂ Fork → {}\n\nNo terminal was opened automatically. Resume manually:\n\n  jcode --resume {}",
                 session_name, session_id
             )));
-            app.set_status_notice("Forked session created");
+            app.set_status_notice(crate::tui::i18n::forked_session_created());
         }
     }
     Ok(opened)
@@ -891,7 +891,7 @@ pub(super) fn maybe_trigger_autoreview_local(app: &mut App) {
             "Failed to launch autoreview: {}",
             error
         )));
-        app.set_status_notice("Autoreview launch failed");
+        app.set_status_notice(crate::tui::i18n::autoreview_launch_failed());
     }
 }
 
@@ -904,7 +904,7 @@ pub(super) fn maybe_trigger_autojudge_local(app: &mut App) {
             "Failed to launch autojudge: {}",
             error
         )));
-        app.set_status_notice("Autojudge launch failed");
+        app.set_status_notice(crate::tui::i18n::autojudge_launch_failed());
     }
 }
 
@@ -921,7 +921,7 @@ pub(super) fn handle_review_command_local(app: &mut App, trimmed: &str) -> bool 
                 "Failed to launch review: {}",
                 error
             )));
-            app.set_status_notice("Review launch failed");
+            app.set_status_notice(crate::tui::i18n::review_launch_failed());
         }
         return true;
     }
@@ -952,7 +952,7 @@ pub(super) fn handle_autoreview_command_local(app: &mut App, trimmed: &str) -> b
             app.push_display_message(DisplayMessage::system(
                 "Autoreview enabled for this session.".to_string(),
             ));
-            app.set_status_notice("Autoreview: ON");
+            app.set_status_notice(crate::tui::i18n::autoreview_on());
             true
         }
         "off" => {
@@ -961,7 +961,7 @@ pub(super) fn handle_autoreview_command_local(app: &mut App, trimmed: &str) -> b
             app.push_display_message(DisplayMessage::system(
                 "Autoreview disabled for this session.".to_string(),
             ));
-            app.set_status_notice("Autoreview: OFF");
+            app.set_status_notice(crate::tui::i18n::autoreview_off());
             true
         }
         "now" => {
@@ -970,7 +970,7 @@ pub(super) fn handle_autoreview_command_local(app: &mut App, trimmed: &str) -> b
                     "Failed to launch autoreview: {}",
                     error
                 )));
-                app.set_status_notice("Autoreview launch failed");
+                app.set_status_notice(crate::tui::i18n::autoreview_launch_failed());
             }
             true
         }
@@ -996,7 +996,7 @@ pub(super) fn handle_judge_command_local(app: &mut App, trimmed: &str) -> bool {
                 "Failed to launch judge: {}",
                 error
             )));
-            app.set_status_notice("Judge launch failed");
+            app.set_status_notice(crate::tui::i18n::judge_launch_failed());
         }
         return true;
     }
@@ -1027,7 +1027,7 @@ pub(super) fn handle_autojudge_command_local(app: &mut App, trimmed: &str) -> bo
             app.push_display_message(DisplayMessage::system(
                 "Autojudge enabled for this session.".to_string(),
             ));
-            app.set_status_notice("Autojudge: ON");
+            app.set_status_notice(crate::tui::i18n::autojudge_on());
             true
         }
         "off" => {
@@ -1036,7 +1036,7 @@ pub(super) fn handle_autojudge_command_local(app: &mut App, trimmed: &str) -> bo
             app.push_display_message(DisplayMessage::system(
                 "Autojudge disabled for this session.".to_string(),
             ));
-            app.set_status_notice("Autojudge: OFF");
+            app.set_status_notice(crate::tui::i18n::autojudge_off());
             true
         }
         "now" => {
@@ -1045,7 +1045,7 @@ pub(super) fn handle_autojudge_command_local(app: &mut App, trimmed: &str) -> bo
                     "Failed to launch autojudge: {}",
                     error
                 )));
-                app.set_status_notice("Autojudge launch failed");
+                app.set_status_notice(crate::tui::i18n::autojudge_launch_failed());
             }
             true
         }

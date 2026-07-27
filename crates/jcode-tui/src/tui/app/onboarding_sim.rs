@@ -66,7 +66,7 @@ impl App {
     pub(super) fn start_onboarding_simulator(&mut self) {
         // Don't fight a genuinely-running live guided flow.
         if self.onboarding_flow_active() && self.onboarding_sim.is_none() {
-            self.set_status_notice("Onboarding flow already active; can't start the simulator now");
+            self.set_status_notice(crate::tui::i18n::onboarding_flow_already_active_can_t());
             return;
         }
 
@@ -124,7 +124,7 @@ impl App {
         self.session_picker_mode = SessionPickerMode::Resume;
         self.onboarding_preview_mode = false;
         self.force_full_redraw = true;
-        self.set_status_notice("Onboarding simulator: off");
+        self.set_status_notice(crate::tui::i18n::onboarding_simulator_off());
     }
 
     /// The catalog of simulated screens, rebuilt fresh each call (fixtures carry
