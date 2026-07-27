@@ -915,3 +915,24 @@ pub fn logout_anthropic_accounts(count: usize) -> String {
     }
 }
 pub fn returned_to_bookmark() -> &'static str { if_zh("", "📌 Returned to bookmark") }
+
+// -- More auth functions --
+pub fn logout_gemini() -> &'static str { if_zh("已登出 Gemini。", "Logged out of Gemini.") }
+pub fn logout_api_key(provider: &str) -> String {
+    match current_language() {
+        Language::Zh => format!("已登出 {} API 密钥。", provider),
+        Language::En => format!("Logged out of {} API key.", provider),
+    }
+}
+pub fn logout_not_automated(display: &str, id: &str) -> String {
+    match current_language() {
+        Language::Zh => format!("{} 的登出尚未自动化。请从 /account {} 设置中移除其已保存的 API 密钥或外部 CLI 会话。", display, id),
+        Language::En => format!("Logout for {} is not automated yet. Remove its saved API key or external CLI session from /account {} settings.", display, id),
+    }
+}
+pub fn logged_out_of_summary(summary: &str) -> String {
+    match current_language() {
+        Language::Zh => format!("已登出：{}。", summary),
+        Language::En => format!("Logged out of: {}.", summary),
+    }
+}

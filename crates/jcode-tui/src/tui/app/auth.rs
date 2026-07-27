@@ -333,7 +333,7 @@ impl App {
                     &resolved.env_file,
                     None,
                 )?;
-                Ok(format!("Logged out of {} API key.", resolved.display_name))
+                Ok(crate::tui::i18n::logout_api_key(&resolved.display_name))
             }
             LoginProviderTarget::Cursor => {
                 crate::auth::cursor::clear_api_key()?;
@@ -341,12 +341,9 @@ impl App {
             }
             LoginProviderTarget::Gemini => {
                 crate::auth::gemini::clear_tokens()?;
-                Ok("Logged out of Gemini.".to_string())
+                Ok(crate::tui::i18n::logout_gemini().to_string())
             }
-            _ => Ok(format!(
-                "Logout for {} is not automated yet. Remove its saved API key or external CLI session from /account {} settings.",
-                provider.display_name, provider.id
-            )),
+            _ => Ok(crate::tui::i18n::logout_not_automated(&provider.display_name, &provider.id)),
         })();
 
         match result {
@@ -480,7 +477,7 @@ impl App {
         let message = if summary.is_empty() {
             "No automated logins to clear.".to_string()
         } else {
-            format!("Logged out of: {}.", summary.join(", "))
+            crate::tui::i18n::logged_out_of_summary(&summary.join(", "))
         };
         self.push_display_message(DisplayMessage::system(message));
 
